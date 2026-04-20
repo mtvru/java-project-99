@@ -1,0 +1,12 @@
+logging:
+  level:
+    hexlet.code.app: DEBUG
+  pattern:
+    dateformat: "yyyy-MM-dd HH:mm:ss"
+
+spring:
+  output:
+    ansi:
+      enabled: always
+  datasource:
+    driver-class-name: org.h2.Driver
