@@ -28,7 +28,7 @@ repositories {
 
 sonar {
     properties {
-        property("sonar.projectKey", "mtvru_hexlet-spring-blog")
+        property("sonar.projectKey", "mtvru_java-project-99")
         property("sonar.organization", "mtvru")
         property("sonar.host.url", "https://sonarcloud.io")
         property("sonar.token", System.getenv("SONAR_TOKEN"))
