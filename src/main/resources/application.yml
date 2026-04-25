@@ -10,3 +10,7 @@ spring:
       enabled: always
   datasource:
     driver-class-name: org.h2.Driver
+
+rsa:
+  public-key: classpath:certs/public.pem
+  private-key: classpath:certs/private.pem
