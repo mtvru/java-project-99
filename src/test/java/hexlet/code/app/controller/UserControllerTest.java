@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
@@ -43,6 +44,7 @@ public class UserControllerTest {
     @Test
     @WithMockUser
     public void testIndex() throws Exception {
+        userRepository.deleteAll();
         User user = Instancio.of(User.class)
             .ignore(Select.field(User::getId))
             .supply(Select.field(User::getEmail), () -> faker.internet().emailAddress())
@@ -55,11 +57,13 @@ public class UserControllerTest {
             .supply(Select.field(User::getPassword), () -> faker.internet().password())
             .create();
         userRepository.save(user2);
-        MvcResult result = this.mockMvc.perform(get("/api/users"))
+        MvcResult result = this.mockMvc.perform(get("/api/users?_start=0&_end=10&_sort=id&_order=ASC"))
             .andExpect(status().isOk())
+            .andExpect(header().exists("X-Total-Count"))
+            .andExpect(jsonPath("$").isArray())
             .andReturn();
         String body = result.getResponse().getContentAsString();
-        assertThatJson(body);
+        assertThatJson(body).isArray().hasSize(2);
     }
 
     @Test

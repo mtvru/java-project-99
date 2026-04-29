@@ -2,6 +2,7 @@ package hexlet.code.app.controller.api;
 
 import hexlet.code.app.dto.UserCreateDTO;
 import hexlet.code.app.dto.UserDTO;
+import hexlet.code.app.dto.UserIndexDTO;
 import hexlet.code.app.dto.UserUpdateDTO;
 import hexlet.code.app.service.UserService;
 import org.springframework.data.domain.Page;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.util.List;
 import java.net.URI;
 
 @RestController
@@ -29,9 +31,11 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<UserDTO>> index(@RequestParam(defaultValue = "10") Integer limit) {
-        Page<UserDTO> users = this.userService.findAll(0, limit);
-        return ResponseEntity.ok(users);
+    public ResponseEntity<List<UserDTO>> index(UserIndexDTO dto) {
+        Page<UserDTO> usersPage = this.userService.findAll(dto);
+        return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(usersPage.getTotalElements()))
+                .body(usersPage.getContent());
     }
 
     @PostMapping

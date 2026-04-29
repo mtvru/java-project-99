@@ -2,6 +2,7 @@ package hexlet.code.app.service;
 
 import hexlet.code.app.dto.UserCreateDTO;
 import hexlet.code.app.dto.UserDTO;
+import hexlet.code.app.dto.UserIndexDTO;
 import hexlet.code.app.dto.UserUpdateDTO;
 import hexlet.code.app.exception.ResourceNotFoundException;
 import hexlet.code.app.mapper.UserMapper;
@@ -41,8 +42,16 @@ public class UserService implements UserDetailsService {
         return this.mapper.map(user);
     }
 
-    public Page<UserDTO> findAll(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+    public Page<UserDTO> findAll(UserIndexDTO dto) {
+        Integer start = dto.get_start() != null ? dto.get_start() : 0;
+        Integer end = dto.get_end() != null ? dto.get_end() : 10;
+        String sort = dto.get_sort() != null ? dto.get_sort() : "id";
+        String order = dto.get_order() != null ? dto.get_order() : "ASC";
+        Sort sortOrder = Sort.by(sort);
+        sortOrder = order.equalsIgnoreCase("asc") ? sortOrder.ascending() : sortOrder.descending();
+        int size = end - start;
+        int page = start / size;
+        Pageable pageable = PageRequest.of(page, size, sortOrder);
         Page<User> users = this.repository.findAll(pageable);
         return users.map(this.mapper::map);
     }
