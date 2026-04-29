@@ -12,18 +12,27 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
 @Service
 @Validated
-public class UserService {
+public class UserService implements UserDetailsService {
     private final UserRepository repository;
     private final UserMapper mapper;
 
     public UserService(UserRepository userRepository, UserMapper userMapper) {
         this.repository = userRepository;
         this.mapper = userMapper;
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        return this.repository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
     public UserDTO create(@Valid UserCreateDTO dto) {

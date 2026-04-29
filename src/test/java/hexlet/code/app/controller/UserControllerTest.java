@@ -158,7 +158,7 @@ public class UserControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(om.writeValueAsString(user));
         mockMvc.perform(request)
-            .andExpect(status().isUnprocessableEntity());
+            .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -179,7 +179,7 @@ public class UserControllerTest {
             .content(om.writeValueAsString(data));
 
         mockMvc.perform(request)
-            .andExpect(status().isUnprocessableEntity());
+            .andExpect(status().isBadRequest());
     }
 
     @Test
