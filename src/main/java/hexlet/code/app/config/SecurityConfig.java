@@ -23,9 +23,9 @@ import org.springframework.web.cors.CorsConfigurationSource;
 
 import java.util.Arrays;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableWebSecurity
-public class SecurityConfig {
+public final class SecurityConfig {
     @Autowired
     private JwtDecoder jwtDecoder;
 

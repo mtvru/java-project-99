@@ -29,7 +29,7 @@ public abstract class UserMapper {
     public abstract User map(UserCreateDTO dto);
 
     @BeforeMapping
-    public void encryptPassword(UserCreateDTO dto, @MappingTarget User user) {
+    public final void encryptPassword(UserCreateDTO dto, @MappingTarget User user) {
         String password = dto.getPassword();
         if (password != null) {
             user.setPassword(this.passwordEncoder.encode(password));
@@ -37,7 +37,7 @@ public abstract class UserMapper {
     }
 
     @BeforeMapping
-    public void encryptPassword(UserUpdateDTO dto, @MappingTarget User user) {
+    public final void encryptPassword(UserUpdateDTO dto, @MappingTarget User user) {
         JsonNullable<String> password = dto.getPassword();
         if (password != null && password.isPresent()) {
             user.setPassword(this.passwordEncoder.encode(password.get()));

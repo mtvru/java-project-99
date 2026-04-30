@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,6 +29,11 @@ public class UserController {
         this.userService = userService;
     }
 
+    /**
+     * Get all users.
+     * @param dto filter and pagination data
+     * @return list of users
+     */
     @GetMapping
     public ResponseEntity<List<UserDTO>> index(UserIndexDTO dto) {
         Page<UserDTO> usersPage = this.userService.findAll(dto);
@@ -38,6 +42,11 @@ public class UserController {
                 .body(usersPage.getContent());
     }
 
+    /**
+     * Create user.
+     * @param dto user data
+     * @return created user
+     */
     @PostMapping
     public ResponseEntity<UserDTO> create(@RequestBody UserCreateDTO dto) {
         UserDTO user = this.userService.create(dto);
@@ -50,18 +59,34 @@ public class UserController {
             .body(user);
     }
 
+    /**
+     * Get user by id.
+     * @param id user id
+     * @return user
+     */
     @GetMapping("/{id}")
     public ResponseEntity<UserDTO> show(@PathVariable Long id) {
         UserDTO user = this.userService.findById(id);
         return ResponseEntity.ok(user);
     }
 
+    /**
+     * Update user.
+     * @param id user id
+     * @param dto update data
+     * @return updated user
+     */
     @PutMapping("/{id}")
     public ResponseEntity<UserDTO> update(@PathVariable Long id, @RequestBody UserUpdateDTO dto) {
         UserDTO user = this.userService.update(id, dto);
         return ResponseEntity.ok(user);
     }
 
+    /**
+     * Delete user.
+     * @param id user id
+     * @return no content
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> destroy(@PathVariable Long id) {
         this.userService.delete(id);

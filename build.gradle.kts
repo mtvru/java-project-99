@@ -1,6 +1,7 @@
 plugins {
     java
     id("jacoco")
+    id("checkstyle")
     id("org.sonarqube") version "7.2.2.6593"
     id("org.springframework.boot") version "3.5.11"
     id("io.spring.dependency-management") version "1.1.7"
@@ -38,6 +39,10 @@ sonar {
 
 jacoco {
     toolVersion = "0.8.14"
+}
+
+checkstyle {
+    toolVersion = "10.12.4"
 }
 
 dependencies {

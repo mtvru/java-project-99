@@ -19,12 +19,14 @@ public abstract class ReferenceMapper {
     @Autowired
     private EntityManager entityManager;
 
-    public <T extends BaseEntity> T toEntity(Long id, @TargetType Class<T> entityClass) {
+    public final <T extends BaseEntity> T toEntity(Long id, @TargetType Class<T> entityClass) {
         return id != null ? this.entityManager.find(entityClass, id) : null;
     }
 
-    public <T extends BaseEntity> Set<T> toEntitySet(Set<Long> ids, @TargetType Class<T> entityClass) {
-        if (ids == null) return null;
+    public final <T extends BaseEntity> Set<T> toEntitySet(Set<Long> ids, @TargetType Class<T> entityClass) {
+        if (ids == null) {
+            return null;
+        }
         return ids.stream()
             .map(id -> toEntity(id, entityClass))
             .filter(Objects::nonNull)

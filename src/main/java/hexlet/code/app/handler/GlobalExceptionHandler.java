@@ -22,7 +22,10 @@ import java.util.UUID;
 
 @ControllerAdvice
 @Slf4j
-public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+public final class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+    private static final String INTEGRITY_VIOLATION_MSG =
+        "Data integrity violation. Check if this record already exists.";
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Object> handleResourceNotFoundException(ResourceNotFoundException ex) {
         return buildErrorResponse(ex, HttpStatus.NOT_FOUND, ex.getMessage());
@@ -30,7 +33,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Object> handleDataIntegrity(DataIntegrityViolationException ex) {
-        return buildErrorResponse(ex, HttpStatus.CONFLICT, "Data integrity violation. Check if this record already exists.");
+        return buildErrorResponse(ex, HttpStatus.CONFLICT, INTEGRITY_VIOLATION_MSG);
     }
 
     @ExceptionHandler(AuthenticationException.class)

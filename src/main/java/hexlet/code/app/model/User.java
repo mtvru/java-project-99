@@ -30,14 +30,16 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @NoArgsConstructor
 @Setter
 @Getter
-public class User implements UserDetails, BaseEntity {
+public final class User implements UserDetails, BaseEntity {
+    private static final int EMAIL_LENGTH = 200;
+
     @Id
     @GeneratedValue(strategy = IDENTITY)
     @EqualsAndHashCode.Include
     private Long id;
     private String firstName;
     private String lastName;
-    @Column(unique = true, nullable = false, length = 200)
+    @Column(unique = true, nullable = false, length = EMAIL_LENGTH)
     private String email;
     @NotBlank
     private String password;

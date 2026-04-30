@@ -20,6 +20,11 @@ public class AuthenticationController {
         this.authenticationManager = authenticationManager;
     }
 
+    /**
+     * Create authentication token.
+     * @param authRequest credentials
+     * @return JWT token
+     */
     @PostMapping("/login")
     public String create(@RequestBody AuthRequestDTO authRequest) {
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
