@@ -36,35 +36,35 @@ public final class AuthenticationControllerTest {
 
     @BeforeEach
     public void setUp() {
-        testUser = Instancio.of(User.class)
+        this.testUser = Instancio.of(User.class)
                 .ignore(Select.field(User::getId))
-                .supply(Select.field(User::getEmail), () -> faker.internet().emailAddress())
-                .supply(Select.field(User::getPassword), () -> passwordEncoder.encode("password"))
+                .supply(Select.field(User::getEmail), () -> this.faker.internet().emailAddress())
+                .supply(Select.field(User::getPassword), () -> this.passwordEncoder.encode("password"))
                 .create();
-        userRepository.save(testUser);
+        this.userRepository.save(this.testUser);
     }
 
     @Test
     public void testLoginSuccess() throws Exception {
         AuthRequestDTO authRequest = new AuthRequestDTO();
-        authRequest.setUsername(testUser.getEmail());
+        authRequest.setUsername(this.testUser.getEmail());
         authRequest.setPassword("password");
 
-        mockMvc.perform(post("/api/login")
+        this.mockMvc.perform(post("/api/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(om.writeValueAsString(authRequest)))
+                        .content(this.om.writeValueAsString(authRequest)))
                 .andExpect(status().isOk());
     }
 
     @Test
     public void testLoginFailure() throws Exception {
         AuthRequestDTO authRequest = new AuthRequestDTO();
-        authRequest.setUsername(testUser.getEmail());
+        authRequest.setUsername(this.testUser.getEmail());
         authRequest.setPassword("wrong-password");
 
-        mockMvc.perform(post("/api/login")
+        this.mockMvc.perform(post("/api/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(om.writeValueAsString(authRequest)))
+                        .content(this.om.writeValueAsString(authRequest)))
                 .andExpect(status().isUnauthorized());
     }
 }

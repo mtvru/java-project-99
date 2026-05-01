@@ -44,7 +44,7 @@ public class UserService implements UserDetailsService {
     }
 
     /**
-     * Create user.
+     * Create a user.
      * @param dto create data
      * @return created user
      */
@@ -74,7 +74,7 @@ public class UserService implements UserDetailsService {
     }
 
     /**
-     * Find user by id.
+     * Find a user by id.
      * @param id user id
      * @return user
      */
@@ -101,13 +101,8 @@ public class UserService implements UserDetailsService {
     /**
      * Delete user.
      * @param id user id
-     * @return true if deleted
      */
-    public boolean delete(Long id) {
-        if (!this.repository.existsById(id)) {
-            return false;
-        }
+    public void delete(Long id) {
         this.repository.deleteById(id);
-        return true;
     }
 }

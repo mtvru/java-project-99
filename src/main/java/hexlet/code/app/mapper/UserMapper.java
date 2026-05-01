@@ -27,6 +27,12 @@ public abstract class UserMapper {
 
     // Creation: standard behavior (null -> null)
     public abstract User map(UserCreateDTO dto);
+    public abstract UserDTO map(User model);
+
+    // Partial update.
+    // Explicitly specify IGNORE so that null fields in the DTO don't affect the entity.
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    public abstract void update(UserUpdateDTO dto, @MappingTarget User model);
 
     @BeforeMapping
     public final void encryptPassword(UserCreateDTO dto, @MappingTarget User user) {
@@ -43,11 +49,4 @@ public abstract class UserMapper {
             user.setPassword(this.passwordEncoder.encode(password.get()));
         }
     }
-
-    public abstract UserDTO map(User model);
-
-    // PATCH: Partial update.
-    // Explicitly specify IGNORE so that null fields in the DTO don't affect the entity.
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    public abstract void update(UserUpdateDTO dto, @MappingTarget User model);
 }

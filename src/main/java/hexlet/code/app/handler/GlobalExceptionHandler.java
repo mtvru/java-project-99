@@ -28,22 +28,22 @@ public final class GlobalExceptionHandler extends ResponseEntityExceptionHandler
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Object> handleResourceNotFoundException(ResourceNotFoundException ex) {
-        return buildErrorResponse(ex, HttpStatus.NOT_FOUND, ex.getMessage());
+        return this.buildErrorResponse(ex, HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Object> handleDataIntegrity(DataIntegrityViolationException ex) {
-        return buildErrorResponse(ex, HttpStatus.CONFLICT, INTEGRITY_VIOLATION_MSG);
+        return this.buildErrorResponse(ex, HttpStatus.CONFLICT, INTEGRITY_VIOLATION_MSG);
     }
 
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<Object> handleAuthenticationException(AuthenticationException ex) {
-        return buildErrorResponse(ex, HttpStatus.UNAUTHORIZED, ex.getMessage());
+        return this.buildErrorResponse(ex, HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleAllExceptions(Exception ex) {
-        return buildErrorResponse(ex, HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+        return this.buildErrorResponse(ex, HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -54,7 +54,7 @@ public final class GlobalExceptionHandler extends ResponseEntityExceptionHandler
             String shortFieldName = fieldName.substring(fieldName.lastIndexOf('.') + 1);
             validationErrors.put(shortFieldName, violation.getMessage());
         });
-        return buildErrorResponse(ex, HttpStatus.BAD_REQUEST, "Validation failed", validationErrors);
+        return this.buildErrorResponse(ex, HttpStatus.BAD_REQUEST, "Validation failed", validationErrors);
     }
 
     @Override
@@ -65,19 +65,19 @@ public final class GlobalExceptionHandler extends ResponseEntityExceptionHandler
         ex.getBindingResult().getFieldErrors().forEach(error ->
             validationErrors.put(error.getField(), error.getDefaultMessage())
         );
-        return buildErrorResponse(ex, HttpStatus.BAD_REQUEST, "Validation failed", validationErrors);
+        return this.buildErrorResponse(ex, HttpStatus.BAD_REQUEST, "Validation failed", validationErrors);
     }
 
     @Override
     protected ResponseEntity<Object> handleExceptionInternal(
         Exception ex, Object body, HttpHeaders headers, HttpStatusCode statusCode, WebRequest request
     ) {
-        return buildErrorResponse(ex, statusCode, "An unexpected error occurred.");
+        return this.buildErrorResponse(ex, statusCode, "An unexpected error occurred.");
     }
 
     private ResponseEntity<Object> buildErrorResponse(Exception ex, HttpStatusCode status, String message) {
         Map<String, String> errors = new HashMap<>();
-        return buildErrorResponse(ex, status, message, errors);
+        return this.buildErrorResponse(ex, status, message, errors);
     }
 
     private ResponseEntity<Object> buildErrorResponse(

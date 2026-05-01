@@ -44,19 +44,19 @@ public class UserControllerTest {
     @Test
     @WithMockUser
     public void testIndex() throws Exception {
-        userRepository.deleteAll();
+        this.userRepository.deleteAll();
         User user = Instancio.of(User.class)
             .ignore(Select.field(User::getId))
-            .supply(Select.field(User::getEmail), () -> faker.internet().emailAddress())
-            .supply(Select.field(User::getPassword), () -> faker.internet().password())
+            .supply(Select.field(User::getEmail), () -> this.faker.internet().emailAddress())
+            .supply(Select.field(User::getPassword), () -> this.faker.internet().password())
             .create();
-        userRepository.save(user);
+        this.userRepository.save(user);
         User user2 = Instancio.of(User.class)
             .ignore(Select.field(User::getId))
-            .supply(Select.field(User::getEmail), () -> faker.internet().emailAddress())
-            .supply(Select.field(User::getPassword), () -> faker.internet().password())
+            .supply(Select.field(User::getEmail), () -> this.faker.internet().emailAddress())
+            .supply(Select.field(User::getPassword), () -> this.faker.internet().password())
             .create();
-        userRepository.save(user2);
+        this.userRepository.save(user2);
         MvcResult result = this.mockMvc.perform(get("/api/users?_start=0&_end=10&_sort=id&_order=ASC"))
             .andExpect(status().isOk())
             .andExpect(header().exists("X-Total-Count"))
@@ -71,10 +71,10 @@ public class UserControllerTest {
     public void testShow() throws Exception {
         User user = Instancio.of(User.class)
             .ignore(Select.field(User::getId))
-            .supply(Select.field(User::getEmail), () -> faker.internet().emailAddress())
-            .supply(Select.field(User::getPassword), () -> faker.internet().password())
+            .supply(Select.field(User::getEmail), () -> this.faker.internet().emailAddress())
+            .supply(Select.field(User::getPassword), () -> this.faker.internet().password())
             .create();
-        user = userRepository.save(user);
+        user = this.userRepository.save(user);
         MvcResult result = this.mockMvc.perform(get("/api/users/" + user.getId()))
             .andExpect(status().isOk())
             .andReturn();
@@ -87,37 +87,37 @@ public class UserControllerTest {
         final String email = "john@example.com";
         User user = Instancio.of(User.class)
             .supply(Select.field(User::getEmail), () -> email)
-            .supply(Select.field(User::getPassword), () -> faker.internet().password())
+            .supply(Select.field(User::getPassword), () -> this.faker.internet().password())
             .create();
         Map<String, String> data = new HashMap<>();
         data.put("email", user.getEmail());
         data.put("password", "password");
         MockHttpServletRequestBuilder request = post("/api/users")
             .contentType(MediaType.APPLICATION_JSON)
-            .content(om.writeValueAsString(data));
-        MvcResult result = mockMvc.perform(request)
+            .content(this.om.writeValueAsString(data));
+        MvcResult result = this.mockMvc.perform(request)
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.id").exists())
             .andExpect(jsonPath("$.email").value(email))
             .andReturn();
         String body = result.getResponse().getContentAsString();
         System.out.println("Compare response testCreate: ");
-        System.out.println(om.writeValueAsString(user));
+        System.out.println(this.om.writeValueAsString(user));
         System.out.println(body);
     }
 
     @Test
     @WithMockUser
     public void testUpdate() throws Exception {
-        final String email = faker.internet().emailAddress();
-        final String lastName = faker.name().lastName();
+        final String email = this.faker.internet().emailAddress();
+        final String lastName = this.faker.name().lastName();
         User user = Instancio.of(User.class)
             .ignore(Select.field(User::getId))
             .supply(Select.field(User::getLastName), () -> lastName)
             .supply(Select.field(User::getEmail), () -> email)
-            .supply(Select.field(User::getPassword), () -> faker.internet().password())
+            .supply(Select.field(User::getPassword), () -> this.faker.internet().password())
             .create();
-        userRepository.save(user);
+        this.userRepository.save(user);
 
         HashMap<String, String> data = new HashMap<>();
         String firstName = "Mike update";
@@ -125,12 +125,12 @@ public class UserControllerTest {
 
         MockHttpServletRequestBuilder request = put("/api/users/{id}", user.getId())
             .contentType(MediaType.APPLICATION_JSON)
-            .content(om.writeValueAsString(data));
+            .content(this.om.writeValueAsString(data));
 
-        mockMvc.perform(request)
+        this.mockMvc.perform(request)
             .andExpect(status().isOk());
 
-        User updatedUser = userRepository.findById(user.getId()).get();
+        User updatedUser = this.userRepository.findById(user.getId()).get();
         assertThat(updatedUser.getFirstName()).isEqualTo(firstName);
         assertThat(updatedUser.getLastName()).isEqualTo(lastName);
         assertThat(updatedUser.getEmail()).isEqualTo(email);
@@ -141,15 +141,15 @@ public class UserControllerTest {
     public void testDelete() throws Exception {
         User user = Instancio.of(User.class)
             .ignore(Select.field(User::getId))
-            .supply(Select.field(User::getEmail), () -> faker.internet().emailAddress())
-            .supply(Select.field(User::getPassword), () -> faker.internet().password())
+            .supply(Select.field(User::getEmail), () -> this.faker.internet().emailAddress())
+            .supply(Select.field(User::getPassword), () -> this.faker.internet().password())
             .create();
-        userRepository.save(user);
+        this.userRepository.save(user);
         MockHttpServletRequestBuilder request = delete("/api/users/" + user.getId())
             .contentType(MediaType.APPLICATION_JSON);
-        mockMvc.perform(request)
+        this.mockMvc.perform(request)
             .andExpect(status().isNoContent());
-        boolean deleted = userRepository.findById(user.getId()).isEmpty();
+        boolean deleted = this.userRepository.findById(user.getId()).isEmpty();
         assertThat(deleted).isEqualTo(true);
     }
 
@@ -160,8 +160,8 @@ public class UserControllerTest {
             .create();
         MockHttpServletRequestBuilder request = post("/api/users")
             .contentType(MediaType.APPLICATION_JSON)
-            .content(om.writeValueAsString(user));
-        mockMvc.perform(request)
+            .content(this.om.writeValueAsString(user));
+        this.mockMvc.perform(request)
             .andExpect(status().isBadRequest());
     }
 
@@ -170,25 +170,25 @@ public class UserControllerTest {
     public void testUpdateWithInvalidData() throws Exception {
         User user = Instancio.of(User.class)
             .ignore(Select.field(User::getId))
-            .supply(Select.field(User::getEmail), () -> faker.internet().emailAddress())
-            .supply(Select.field(User::getPassword), () -> faker.internet().password())
+            .supply(Select.field(User::getEmail), () -> this.faker.internet().emailAddress())
+            .supply(Select.field(User::getPassword), () -> this.faker.internet().password())
             .create();
-        userRepository.save(user);
+        this.userRepository.save(user);
 
         HashMap<String, String> data = new HashMap<>();
         data.put("email", "");
 
         MockHttpServletRequestBuilder request = put("/api/users/" + user.getId())
             .contentType(MediaType.APPLICATION_JSON)
-            .content(om.writeValueAsString(data));
+            .content(this.om.writeValueAsString(data));
 
-        mockMvc.perform(request)
+        this.mockMvc.perform(request)
             .andExpect(status().isBadRequest());
     }
 
     @Test
     public void testIndexWithoutAuth() throws Exception {
-        mockMvc.perform(get("/api/users"))
+        this.mockMvc.perform(get("/api/users"))
             .andExpect(status().isUnauthorized());
     }
 }

@@ -14,6 +14,11 @@ public final class JWTUtils {
     @Autowired
     private JwtEncoder encoder;
 
+    /**
+     * Generate JWT token for user.
+     * @param username user's email
+     * @return generated JWT token
+     */
     public String generateToken(String username) {
         Instant now = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()

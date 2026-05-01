@@ -52,12 +52,13 @@ public final class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/task_statuses", "/api/task_statuses/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/", "/welcome").permitAll()
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/assets/**", "/favicon.ico").permitAll()
                 .requestMatchers("/**/*.html").permitAll()
                 .anyRequest().authenticated())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .oauth2ResourceServer((rs) -> rs.jwt((jwt) -> jwt.decoder(jwtDecoder)))
+            .oauth2ResourceServer((rs) -> rs.jwt((jwt) -> jwt.decoder(this.jwtDecoder)))
             .httpBasic(Customizer.withDefaults())
             .build();
     }

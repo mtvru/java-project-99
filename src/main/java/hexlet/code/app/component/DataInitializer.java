@@ -1,6 +1,9 @@
 package hexlet.code.app.component;
 
+import hexlet.code.app.model.TaskStatus;
+import hexlet.code.app.model.enums.TaskStatusName;
 import hexlet.code.app.model.User;
+import hexlet.code.app.repository.TaskStatusRepository;
 import hexlet.code.app.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
@@ -11,6 +14,7 @@ import org.springframework.stereotype.Component;
 @AllArgsConstructor
 public final class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
+    private final TaskStatusRepository taskStatusRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -18,10 +22,19 @@ public final class DataInitializer implements CommandLineRunner {
         String email = "hexlet@example.com";
         User userData = new User();
 
-        if (userRepository.findByEmail(email).isEmpty()) {
+        if (this.userRepository.findByEmail(email).isEmpty()) {
             userData.setEmail(email);
-            userData.setPassword(passwordEncoder.encode("qwerty"));
-            userRepository.save(userData);
+            userData.setPassword(this.passwordEncoder.encode("qwerty"));
+            this.userRepository.save(userData);
+        }
+
+        for (TaskStatusName statusName : TaskStatusName.values()) {
+            if (this.taskStatusRepository.findBySlug(statusName.getSlug()).isEmpty()) {
+                TaskStatus status = new TaskStatus();
+                status.setName(statusName.getName());
+                status.setSlug(statusName.getSlug());
+                this.taskStatusRepository.save(status);
+            }
         }
     }
 }

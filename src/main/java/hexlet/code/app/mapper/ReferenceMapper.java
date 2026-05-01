@@ -28,7 +28,7 @@ public abstract class ReferenceMapper {
             return null;
         }
         return ids.stream()
-            .map(id -> toEntity(id, entityClass))
+            .map(id -> this.toEntity(id, entityClass))
             .filter(Objects::nonNull)
             .collect(Collectors.toCollection(LinkedHashSet::new));
     }

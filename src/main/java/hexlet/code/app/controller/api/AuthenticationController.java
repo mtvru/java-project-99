@@ -21,7 +21,7 @@ public class AuthenticationController {
     }
 
     /**
-     * Create authentication token.
+     * Create an authentication token.
      * @param authRequest credentials
      * @return JWT token
      */
@@ -30,7 +30,7 @@ public class AuthenticationController {
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                 authRequest.getUsername(), authRequest.getPassword()
         );
-        authenticationManager.authenticate(authentication);
-        return jwtUtils.generateToken(authRequest.getUsername());
+        this.authenticationManager.authenticate(authentication);
+        return this.jwtUtils.generateToken(authRequest.getUsername());
     }
 }
