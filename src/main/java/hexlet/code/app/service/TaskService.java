@@ -1,5 +1,6 @@
 package hexlet.code.app.service;
 
+import hexlet.code.app.dto.IndexDTO;
 import hexlet.code.app.dto.TaskCreateDTO;
 import hexlet.code.app.dto.TaskDTO;
 import hexlet.code.app.dto.TaskUpdateDTO;
@@ -9,10 +10,10 @@ import hexlet.code.app.model.Task;
 import hexlet.code.app.repository.TaskRepository;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
-
-import java.util.List;
 
 @Service
 @Validated
@@ -23,18 +24,20 @@ public class TaskService {
 
     /**
      * Find all tasks.
-     * @return list of tasks
+     * @param dto index data
+     * @return page of tasks
      */
-    public List<TaskDTO> findAll() {
-        return repository.findAll().stream()
-                .map(mapper::map)
-                .toList();
+    public Page<TaskDTO> findAll(IndexDTO dto) {
+        Pageable pageable = mapper.map(dto);
+        Page<Task> tasks = this.repository.findAll(pageable);
+        return tasks.map(this.mapper::map);
     }
 
     /**
      * Find a task by id.
      * @param id task id
      * @return task data
+     * @throws ResourceNotFoundException if the task is not found
      */
     public TaskDTO findById(Long id) {
         Task task = repository.findById(id)
@@ -58,6 +61,7 @@ public class TaskService {
      * @param id task id
      * @param dto task update data
      * @return updated task data
+     * @throws ResourceNotFoundException if the task is not found
      */
     public TaskDTO update(Long id, @Valid TaskUpdateDTO dto) {
         Task task = repository.findById(id)

@@ -1,9 +1,11 @@
 package hexlet.code.app.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import hexlet.code.app.model.Label;
 import hexlet.code.app.model.Task;
 import hexlet.code.app.model.TaskStatus;
 import hexlet.code.app.model.User;
+import hexlet.code.app.repository.LabelRepository;
 import hexlet.code.app.repository.TaskRepository;
 import hexlet.code.app.repository.TaskStatusRepository;
 import hexlet.code.app.repository.UserRepository;
@@ -22,6 +24,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,6 +48,8 @@ public final class TaskControllerTest {
     @Autowired
     private UserRepository userRepository;
     @Autowired
+    private LabelRepository labelRepository;
+    @Autowired
     private ObjectMapper om;
     @Autowired
     private Faker faker;
@@ -57,6 +62,7 @@ public final class TaskControllerTest {
         this.taskRepository.deleteAll();
         this.taskStatusRepository.deleteAll();
         this.userRepository.deleteAll();
+        this.labelRepository.deleteAll();
         this.testUser = Instancio.of(User.class)
                 .ignore(Select.field(User::getId))
                 .supply(Select.field(User::getEmail), () -> this.faker.internet().emailAddress())
@@ -74,6 +80,7 @@ public final class TaskControllerTest {
         this.testTask = Instancio.of(Task.class)
                 .ignore(Select.field(Task::getId))
                 .ignore(Select.field(Task::getCreatedAt))
+                .ignore(Select.field(Task::getTaskLabels))
                 .supply(Select.field(Task::getName), () -> this.faker.lorem().sentence())
                 .supply(Select.field(Task::getDescription), () -> this.faker.lorem().paragraph())
                 .supply(Select.field(Task::getTaskStatus), () -> this.testStatus)
@@ -195,6 +202,36 @@ public final class TaskControllerTest {
                 .andExpect(status().isInternalServerError());
 
         assertThat(this.taskStatusRepository.existsById(this.testStatus.getId())).isTrue();
+    }
+
+    @Test
+    @WithMockUser
+    public void testCreateWithLabels() throws Exception {
+        Label label1 = new Label();
+        label1.setName("label1");
+        this.labelRepository.save(label1);
+
+        Label label2 = new Label();
+        label2.setName("label2");
+        this.labelRepository.save(label2);
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("title", "Task with labels");
+        data.put("status", this.testStatus.getSlug());
+        data.put("taskLabelIds", Set.of(label1.getId(), label2.getId()));
+
+        this.mockMvc.perform(post("/api/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(this.om.writeValueAsString(data)))
+                .andExpect(status().isCreated());
+
+        Task task = this.taskRepository.findAll().stream()
+                .filter(t -> t.getName().equals("Task with labels"))
+                .findFirst()
+                .get();
+
+        assertThat(task.getLabels()).hasSize(2);
+        assertThat(task.getLabels()).extracting(Label::getId).containsExactlyInAnyOrder(label1.getId(), label2.getId());
     }
 
     @Test

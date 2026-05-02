@@ -1,18 +1,17 @@
 package hexlet.code.app.service;
 
+import hexlet.code.app.dto.IndexDTO;
 import hexlet.code.app.dto.UserCreateDTO;
 import hexlet.code.app.dto.UserDTO;
-import hexlet.code.app.dto.UserIndexDTO;
 import hexlet.code.app.dto.UserUpdateDTO;
 import hexlet.code.app.exception.ResourceNotFoundException;
 import hexlet.code.app.mapper.UserMapper;
 import hexlet.code.app.model.User;
 import hexlet.code.app.repository.UserRepository;
 import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -21,15 +20,10 @@ import org.springframework.validation.annotation.Validated;
 
 @Service
 @Validated
+@AllArgsConstructor
 public class UserService implements UserDetailsService {
-    private static final int DEFAULT_PAGE_SIZE = 10;
     private final UserRepository repository;
     private final UserMapper mapper;
-
-    public UserService(UserRepository userRepository, UserMapper userMapper) {
-        this.repository = userRepository;
-        this.mapper = userMapper;
-    }
 
     /**
      * Load user by username.
@@ -59,16 +53,8 @@ public class UserService implements UserDetailsService {
      * @param dto index data
      * @return page of users
      */
-    public Page<UserDTO> findAll(UserIndexDTO dto) {
-        Integer start = dto.getStart() != null ? dto.getStart() : 0;
-        Integer end = dto.getEnd() != null ? dto.getEnd() : DEFAULT_PAGE_SIZE;
-        String sort = dto.getSort() != null ? dto.getSort() : "id";
-        String order = dto.getOrder() != null ? dto.getOrder() : "ASC";
-        Sort sortOrder = Sort.by(sort);
-        sortOrder = order.equalsIgnoreCase("asc") ? sortOrder.ascending() : sortOrder.descending();
-        int size = end - start;
-        int page = start / size;
-        Pageable pageable = PageRequest.of(page, size, sortOrder);
+    public Page<UserDTO> findAll(IndexDTO dto) {
+        Pageable pageable = mapper.map(dto);
         Page<User> users = this.repository.findAll(pageable);
         return users.map(this.mapper::map);
     }
@@ -77,6 +63,7 @@ public class UserService implements UserDetailsService {
      * Find a user by id.
      * @param id user id
      * @return user
+     * @throws ResourceNotFoundException if the user is not found
      */
     public UserDTO findById(Long id) {
         return this.repository.findById(id)
@@ -89,6 +76,7 @@ public class UserService implements UserDetailsService {
      * @param id user id
      * @param dto update data
      * @return updated user
+     * @throws ResourceNotFoundException if the user is not found
      */
     public UserDTO update(Long id, @Valid UserUpdateDTO dto) {
         User user = this.repository.findById(id)
@@ -101,6 +89,8 @@ public class UserService implements UserDetailsService {
     /**
      * Delete user.
      * @param id user id
+     * @throws ResourceNotFoundException if the user is not found
+     * @throws RuntimeException if the user is linked to tasks
      */
     public void delete(Long id) {
         User user = this.repository.findById(id)

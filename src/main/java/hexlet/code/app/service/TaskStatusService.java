@@ -1,5 +1,6 @@
 package hexlet.code.app.service;
 
+import hexlet.code.app.dto.IndexDTO;
 import hexlet.code.app.dto.TaskStatusCreateDTO;
 import hexlet.code.app.dto.TaskStatusDTO;
 import hexlet.code.app.dto.TaskStatusUpdateDTO;
@@ -9,10 +10,10 @@ import hexlet.code.app.model.TaskStatus;
 import hexlet.code.app.repository.TaskStatusRepository;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
-
-import java.util.List;
 
 @AllArgsConstructor
 @Service
@@ -23,18 +24,20 @@ public class TaskStatusService {
 
     /**
      * Get all task statuses.
-     * @return list of task statuses
+     * @param dto index data
+     * @return page of task statuses
      */
-    public List<TaskStatusDTO> findAll() {
-        return this.repository.findAll().stream()
-                .map(this.mapper::map)
-                .toList();
+    public Page<TaskStatusDTO> findAll(IndexDTO dto) {
+        Pageable pageable = mapper.map(dto);
+        Page<TaskStatus> statuses = this.repository.findAll(pageable);
+        return statuses.map(this.mapper::map);
     }
 
     /**
      * Find task status by id.
      * @param id status id
      * @return task status
+     * @throws ResourceNotFoundException if the status is not found
      */
     public TaskStatusDTO findById(Long id) {
         TaskStatus status = this.repository.findById(id)
@@ -58,6 +61,7 @@ public class TaskStatusService {
      * @param id status id
      * @param dto new status data
      * @return updated task status
+     * @throws ResourceNotFoundException if the status is not found
      */
     public TaskStatusDTO update(Long id, @Valid TaskStatusUpdateDTO dto) {
         TaskStatus status = this.repository.findById(id)
@@ -70,6 +74,8 @@ public class TaskStatusService {
     /**
      * Delete task status.
      * @param id status id
+     * @throws ResourceNotFoundException if the status is not found
+     * @throws RuntimeException if the status is linked to tasks
      */
     public void delete(Long id) {
         TaskStatus status = this.repository.findById(id)

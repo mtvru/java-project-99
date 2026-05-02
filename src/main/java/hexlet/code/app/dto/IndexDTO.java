@@ -6,7 +6,7 @@ import lombok.Setter;
 
 @Setter
 @Getter
-public class UserIndexDTO {
+public class IndexDTO {
     @JsonProperty("_start")
     private Integer start;
 

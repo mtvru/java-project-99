@@ -55,6 +55,8 @@ dependencies {
     implementation("org.openapitools:jackson-databind-nullable:0.2.6")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.17")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-api:2.8.17")
     implementation("org.postgresql:postgresql:42.7.9")
     compileOnly("org.projectlombok:lombok")
     developmentOnly("org.springframework.boot:spring-boot-devtools")

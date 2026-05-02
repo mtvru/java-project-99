@@ -1,6 +1,7 @@
 package hexlet.code.app.mapper;
 
 
+import hexlet.code.app.dto.IndexDTO;
 import hexlet.code.app.dto.UserCreateDTO;
 import hexlet.code.app.dto.UserDTO;
 import hexlet.code.app.dto.UserUpdateDTO;
@@ -14,6 +15,7 @@ import org.mapstruct.ReportingPolicy;
 import org.mapstruct.BeforeMapping;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Mapper(
@@ -24,6 +26,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public abstract class UserMapper {
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private QueryMapper queryMapper;
 
     // Creation: standard behavior (null -> null)
     public abstract User map(UserCreateDTO dto);
@@ -48,5 +53,9 @@ public abstract class UserMapper {
         if (password != null && password.isPresent()) {
             user.setPassword(this.passwordEncoder.encode(password.get()));
         }
+    }
+
+    public final Pageable map(IndexDTO dto) {
+        return queryMapper.toPageable(dto);
     }
 }
