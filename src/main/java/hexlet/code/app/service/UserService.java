@@ -103,6 +103,11 @@ public class UserService implements UserDetailsService {
      * @param id user id
      */
     public void delete(Long id) {
+        User user = this.repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " not found"));
+        if (this.repository.existsByTasks(user)) {
+            throw new RuntimeException("Cannot delete user linked to tasks");
+        }
         this.repository.deleteById(id);
     }
 }

@@ -49,14 +49,14 @@ public class UserController {
      */
     @PostMapping
     public ResponseEntity<UserDTO> create(@RequestBody UserCreateDTO dto) {
-        UserDTO user = this.userService.create(dto);
+        UserDTO userDTO = this.userService.create(dto);
         URI location = ServletUriComponentsBuilder
             .fromCurrentRequest()
             .path("/{id}")
-            .buildAndExpand(user.getId())
+            .buildAndExpand(userDTO.getId())
             .toUri();
         return ResponseEntity.created(location)
-            .body(user);
+            .body(userDTO);
     }
 
     /**
@@ -66,8 +66,8 @@ public class UserController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<UserDTO> show(@PathVariable Long id) {
-        UserDTO user = this.userService.findById(id);
-        return ResponseEntity.ok(user);
+        UserDTO userDTO = this.userService.findById(id);
+        return ResponseEntity.ok(userDTO);
     }
 
     /**
@@ -78,8 +78,8 @@ public class UserController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<UserDTO> update(@PathVariable Long id, @RequestBody UserUpdateDTO dto) {
-        UserDTO user = this.userService.update(id, dto);
-        return ResponseEntity.ok(user);
+        UserDTO userDTO = this.userService.update(id, dto);
+        return ResponseEntity.ok(userDTO);
     }
 
     /**

@@ -12,6 +12,7 @@ import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hexlet.code.app.model.User;
+import hexlet.code.app.repository.TaskRepository;
 import hexlet.code.app.repository.UserRepository;
 import net.datafaker.Faker;
 import org.instancio.Instancio;
@@ -39,11 +40,14 @@ public class UserControllerTest {
     @Autowired
     private UserRepository userRepository;
     @Autowired
+    private TaskRepository taskRepository;
+    @Autowired
     private ObjectMapper om;
 
     @Test
     @WithMockUser
     public void testIndex() throws Exception {
+        this.taskRepository.deleteAll();
         this.userRepository.deleteAll();
         User user = Instancio.of(User.class)
             .ignore(Select.field(User::getId))

@@ -5,7 +5,6 @@ import hexlet.code.app.dto.TaskStatusDTO;
 import hexlet.code.app.dto.TaskStatusUpdateDTO;
 import hexlet.code.app.service.TaskStatusService;
 import lombok.AllArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,9 +13,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -43,9 +43,9 @@ public class TaskStatusController {
      * @return task status
      */
     @GetMapping("/{id}")
-    @ResponseStatus(HttpStatus.OK)
-    public TaskStatusDTO show(@PathVariable Long id) {
-        return this.service.findById(id);
+    public ResponseEntity<TaskStatusDTO> show(@PathVariable Long id) {
+        TaskStatusDTO taskStatusDTO = this.service.findById(id);
+        return ResponseEntity.ok(taskStatusDTO);
     }
 
     /**
@@ -54,9 +54,15 @@ public class TaskStatusController {
      * @return created task status
      */
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public TaskStatusDTO create(@RequestBody TaskStatusCreateDTO dto) {
-        return this.service.create(dto);
+    public ResponseEntity<TaskStatusDTO> create(@RequestBody TaskStatusCreateDTO dto) {
+        TaskStatusDTO taskStatusDTO = this.service.create(dto);
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(taskStatusDTO.getId())
+                .toUri();
+        return ResponseEntity.created(location)
+                .body(taskStatusDTO);
     }
 
     /**
@@ -66,18 +72,19 @@ public class TaskStatusController {
      * @return updated task status
      */
     @PutMapping("/{id}")
-    @ResponseStatus(HttpStatus.OK)
-    public TaskStatusDTO update(@PathVariable Long id, @RequestBody TaskStatusUpdateDTO dto) {
-        return this.service.update(id, dto);
+    public ResponseEntity<TaskStatusDTO> update(@PathVariable Long id, @RequestBody TaskStatusUpdateDTO dto) {
+        TaskStatusDTO taskStatusDTO = this.service.update(id, dto);
+        return ResponseEntity.ok(taskStatusDTO);
     }
 
     /**
      * Delete task status.
      * @param id status id
+     * @return empty response
      */
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void destroy(@PathVariable Long id) {
+    public ResponseEntity<Void> destroy(@PathVariable Long id) {
         this.service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

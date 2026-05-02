@@ -2,6 +2,7 @@ package hexlet.code.app.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hexlet.code.app.model.TaskStatus;
+import hexlet.code.app.repository.TaskRepository;
 import hexlet.code.app.repository.TaskStatusRepository;
 import net.datafaker.Faker;
 import org.instancio.Instancio;
@@ -35,6 +36,8 @@ public final class TaskStatusControllerTest {
     @Autowired
     private TaskStatusRepository taskStatusRepository;
     @Autowired
+    private TaskRepository taskRepository;
+    @Autowired
     private ObjectMapper om;
     @Autowired
     private Faker faker;
@@ -42,6 +45,7 @@ public final class TaskStatusControllerTest {
 
     @BeforeEach
     public void setUp() {
+        this.taskRepository.deleteAll();
         this.taskStatusRepository.deleteAll();
         this.testStatus = Instancio.of(TaskStatus.class)
                 .ignore(Select.field(TaskStatus::getId))

@@ -72,6 +72,11 @@ public class TaskStatusService {
      * @param id status id
      */
     public void delete(Long id) {
+        TaskStatus status = this.repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("TaskStatus with id " + id + " not found"));
+        if (this.repository.existsByTasks(status)) {
+            throw new RuntimeException("Cannot delete status linked to tasks");
+        }
         this.repository.deleteById(id);
     }
 }

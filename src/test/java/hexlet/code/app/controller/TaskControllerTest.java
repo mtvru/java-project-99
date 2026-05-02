@@ -1,0 +1,205 @@
+package hexlet.code.app.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import hexlet.code.app.model.Task;
+import hexlet.code.app.model.TaskStatus;
+import hexlet.code.app.model.User;
+import hexlet.code.app.repository.TaskRepository;
+import hexlet.code.app.repository.TaskStatusRepository;
+import hexlet.code.app.repository.UserRepository;
+import net.datafaker.Faker;
+import org.instancio.Instancio;
+import org.instancio.Select;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+public final class TaskControllerTest {
+    private static final int DIGITS_COUNT = 3;
+    private static final int TEST_INDEX = 100;
+    @Autowired
+    private MockMvc mockMvc;
+    @Autowired
+    private TaskRepository taskRepository;
+    @Autowired
+    private TaskStatusRepository taskStatusRepository;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private ObjectMapper om;
+    @Autowired
+    private Faker faker;
+    private Task testTask;
+    private User testUser;
+    private TaskStatus testStatus;
+
+    @BeforeEach
+    public void setUp() {
+        this.taskRepository.deleteAll();
+        this.taskStatusRepository.deleteAll();
+        this.userRepository.deleteAll();
+        this.testUser = Instancio.of(User.class)
+                .ignore(Select.field(User::getId))
+                .supply(Select.field(User::getEmail), () -> this.faker.internet().emailAddress())
+                .supply(Select.field(User::getPassword), () -> this.faker.internet().password())
+                .create();
+        this.userRepository.save(this.testUser);
+        this.testStatus = Instancio.of(TaskStatus.class)
+                .ignore(Select.field(TaskStatus::getId))
+                .supply(Select.field(TaskStatus::getName),
+                        () -> this.faker.lorem().word() + this.faker.number().digits(DIGITS_COUNT))
+                .supply(Select.field(TaskStatus::getSlug),
+                        () -> this.faker.internet().slug() + this.faker.number().digits(DIGITS_COUNT))
+                .create();
+        this.taskStatusRepository.save(this.testStatus);
+        this.testTask = Instancio.of(Task.class)
+                .ignore(Select.field(Task::getId))
+                .ignore(Select.field(Task::getCreatedAt))
+                .supply(Select.field(Task::getName), () -> this.faker.lorem().sentence())
+                .supply(Select.field(Task::getDescription), () -> this.faker.lorem().paragraph())
+                .supply(Select.field(Task::getTaskStatus), () -> this.testStatus)
+                .supply(Select.field(Task::getAssignee), () -> this.testUser)
+                .create();
+        this.taskRepository.save(this.testTask);
+    }
+
+    @Test
+    @WithMockUser
+    public void testIndex() throws Exception {
+        MvcResult result = this.mockMvc.perform(get("/api/tasks"))
+                .andExpect(status().isOk())
+                .andReturn();
+        String body = result.getResponse().getContentAsString();
+        assertThatJson(body).isArray().hasSize(1);
+    }
+
+    @Test
+    @WithMockUser
+    public void testShow() throws Exception {
+        MvcResult result = this.mockMvc.perform(get("/api/tasks/{id}", this.testTask.getId()))
+                .andExpect(status().isOk())
+                .andReturn();
+        String body = result.getResponse().getContentAsString();
+        assertThatJson(body).and(
+                v -> v.node("title").isEqualTo(this.testTask.getName()),
+                v -> v.node("content").isEqualTo(this.testTask.getDescription()),
+                v -> v.node("status").isEqualTo(this.testStatus.getSlug()),
+                v -> v.node("assignee_id").isEqualTo(this.testUser.getId())
+        );
+    }
+
+    @Test
+    @WithMockUser
+    public void testCreate() throws Exception {
+        Map<String, Object> data = new HashMap<>();
+        data.put("title", "New Task");
+        data.put("content", "New Description");
+        data.put("status", this.testStatus.getSlug());
+        data.put("assignee_id", this.testUser.getId());
+        data.put("index", TEST_INDEX);
+        this.mockMvc.perform(post("/api/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(this.om.writeValueAsString(data)))
+                .andExpect(status().isCreated());
+
+        Task task = this.taskRepository.findAll().stream()
+                .filter(t -> t.getName().equals("New Task"))
+                .findFirst()
+                .get();
+        assertThat(task.getDescription()).isEqualTo("New Description");
+        assertThat(task.getTaskStatus().getSlug()).isEqualTo(this.testStatus.getSlug());
+        assertThat(task.getAssignee().getId()).isEqualTo(this.testUser.getId());
+        assertThat(task.getIndex()).isEqualTo(TEST_INDEX);
+    }
+
+    @Test
+    @WithMockUser
+    public void testUpdate() throws Exception {
+        Map<String, Object> data = new HashMap<>();
+        data.put("title", "Updated Task");
+        data.put("content", "Updated Description");
+        this.mockMvc.perform(put("/api/tasks/{id}", this.testTask.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(this.om.writeValueAsString(data)))
+                .andExpect(status().isOk());
+        Task task = this.taskRepository.findById(this.testTask.getId()).get();
+        assertThat(task.getName()).isEqualTo("Updated Task");
+        assertThat(task.getDescription()).isEqualTo("Updated Description");
+        assertThat(task.getTaskStatus().getSlug()).isEqualTo(this.testStatus.getSlug());
+    }
+
+    @Test
+    @WithMockUser
+    public void testPartialUpdateStatus() throws Exception {
+        TaskStatus newStatus = Instancio.of(TaskStatus.class)
+                .ignore(Select.field(TaskStatus::getId))
+                .supply(Select.field(TaskStatus::getName),
+                        () -> this.faker.lorem().word() + this.faker.number().digits(DIGITS_COUNT))
+                .supply(Select.field(TaskStatus::getSlug),
+                        () -> this.faker.internet().slug() + this.faker.number().digits(DIGITS_COUNT))
+                .create();
+        this.taskStatusRepository.save(newStatus);
+
+        Map<String, Object> data = Map.of("status", newStatus.getSlug());
+
+        this.mockMvc.perform(put("/api/tasks/{id}", this.testTask.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(this.om.writeValueAsString(data)))
+                .andExpect(status().isOk());
+
+        Task task = this.taskRepository.findById(this.testTask.getId()).get();
+        assertThat(task.getTaskStatus().getSlug()).isEqualTo(newStatus.getSlug());
+    }
+
+    @Test
+    @WithMockUser
+    public void testDelete() throws Exception {
+        this.mockMvc.perform(delete("/api/tasks/{id}", this.testTask.getId()))
+                .andExpect(status().isNoContent());
+
+        assertThat(this.taskRepository.existsById(this.testTask.getId())).isFalse();
+    }
+
+    @Test
+    @WithMockUser
+    public void testDeleteUserWithTask() throws Exception {
+        this.mockMvc.perform(delete("/api/users/{id}", this.testUser.getId()))
+                .andExpect(status().isInternalServerError());
+
+        assertThat(this.userRepository.existsById(this.testUser.getId())).isTrue();
+    }
+
+    @Test
+    @WithMockUser
+    public void testDeleteStatusWithTask() throws Exception {
+        this.mockMvc.perform(delete("/api/task_statuses/{id}", this.testStatus.getId()))
+                .andExpect(status().isInternalServerError());
+
+        assertThat(this.taskStatusRepository.existsById(this.testStatus.getId())).isTrue();
+    }
+
+    @Test
+    public void testIndexWithoutAuth() throws Exception {
+        this.mockMvc.perform(get("/api/tasks"))
+                .andExpect(status().isUnauthorized());
+    }
+}
