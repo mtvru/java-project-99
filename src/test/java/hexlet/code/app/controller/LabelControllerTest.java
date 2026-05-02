@@ -72,6 +72,7 @@ public final class LabelControllerTest {
                 .andReturn();
         String body = result.getResponse().getContentAsString();
         assertThatJson(body).isArray().hasSize(1);
+        assertThatJson(body).node("[0].createdAt").asString().matches("^\\d{4}-\\d{2}-\\d{2}$");
     }
 
     @Test
@@ -81,7 +82,10 @@ public final class LabelControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
         String body = result.getResponse().getContentAsString();
-        assertThatJson(body).node("name").isEqualTo(this.testLabel.getName());
+        assertThatJson(body).and(
+                v -> v.node("name").isEqualTo(this.testLabel.getName()),
+                v -> v.node("createdAt").asString().matches("^\\d{4}-\\d{2}-\\d{2}$")
+        );
     }
 
     @Test

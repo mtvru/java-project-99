@@ -65,6 +65,7 @@ public final class TaskStatusControllerTest {
                 .andReturn();
         String body = result.getResponse().getContentAsString();
         assertThatJson(body).isArray().hasSize(1);
+        assertThatJson(body).node("[0].createdAt").asString().matches("^\\d{4}-\\d{2}-\\d{2}$");
     }
 
     @Test
@@ -75,7 +76,8 @@ public final class TaskStatusControllerTest {
         String body = result.getResponse().getContentAsString();
         assertThatJson(body).and(
                 v -> v.node("name").isEqualTo(this.testStatus.getName()),
-                v -> v.node("slug").isEqualTo(this.testStatus.getSlug())
+                v -> v.node("slug").isEqualTo(this.testStatus.getSlug()),
+                v -> v.node("createdAt").asString().matches("^\\d{4}-\\d{2}-\\d{2}$")
         );
     }
 

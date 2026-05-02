@@ -97,6 +97,67 @@ public final class TaskControllerTest {
                 .andReturn();
         String body = result.getResponse().getContentAsString();
         assertThatJson(body).isArray().hasSize(1);
+        assertThatJson(body).node("[0].createdAt").asString().matches("^\\d{4}-\\d{2}-\\d{2}$");
+    }
+
+    @Test
+    @WithMockUser
+    public void testIndexWithFilter() throws Exception {
+        Label label = Instancio.of(Label.class)
+                .ignore(Select.field(Label::getId))
+                .ignore(Select.field(Label::getTaskLabels))
+                .supply(Select.field(Label::getName), () -> faker.lorem().word() + faker.number().digits(DIGITS_COUNT))
+                .create();
+        labelRepository.save(label);
+
+        Task task = Instancio.of(Task.class)
+                .ignore(Select.field(Task::getId))
+                .ignore(Select.field(Task::getCreatedAt))
+                .ignore(Select.field(Task::getTaskLabels))
+                .supply(Select.field(Task::getName), () -> "Specific title")
+                .supply(Select.field(Task::getTaskStatus), () -> testStatus)
+                .supply(Select.field(Task::getAssignee), () -> testUser)
+                .create();
+        taskRepository.save(task);
+
+        task.setLabels(Set.of(label));
+        taskRepository.save(task);
+
+        // Filter by title
+        MvcResult result1 = mockMvc.perform(get("/api/tasks?titleCont=Specific"))
+                .andExpect(status().isOk())
+                .andReturn();
+        assertThatJson(result1.getResponse().getContentAsString()).isArray().hasSize(1);
+
+        // Filter by assignee
+        MvcResult result2 = mockMvc.perform(get("/api/tasks?assigneeId=" + testUser.getId()))
+                .andExpect(status().isOk())
+                .andReturn();
+        assertThatJson(result2.getResponse().getContentAsString()).isArray().hasSize(2);
+
+        // Filter by status
+        MvcResult result3 = mockMvc.perform(get("/api/tasks?status=" + testStatus.getSlug()))
+                .andExpect(status().isOk())
+                .andReturn();
+        assertThatJson(result3.getResponse().getContentAsString()).isArray().hasSize(2);
+
+        // Filter by label
+        MvcResult result4 = mockMvc.perform(get("/api/tasks?labelId=" + label.getId()))
+                .andExpect(status().isOk())
+                .andReturn();
+        assertThatJson(result4.getResponse().getContentAsString()).isArray().hasSize(1);
+
+        // Filter by multiple params
+        MvcResult result5 = mockMvc.perform(get("/api/tasks?titleCont=Specific&labelId=" + label.getId()))
+                .andExpect(status().isOk())
+                .andReturn();
+        assertThatJson(result5.getResponse().getContentAsString()).isArray().hasSize(1);
+
+        // Filter by multiple params - no results
+        MvcResult result6 = mockMvc.perform(get("/api/tasks?titleCont=NonExistent&labelId=" + label.getId()))
+                .andExpect(status().isOk())
+                .andReturn();
+        assertThatJson(result6.getResponse().getContentAsString()).isArray().hasSize(0);
     }
 
     @Test
@@ -110,7 +171,8 @@ public final class TaskControllerTest {
                 v -> v.node("title").isEqualTo(this.testTask.getName()),
                 v -> v.node("content").isEqualTo(this.testTask.getDescription()),
                 v -> v.node("status").isEqualTo(this.testStatus.getSlug()),
-                v -> v.node("assignee_id").isEqualTo(this.testUser.getId())
+                v -> v.node("assignee_id").isEqualTo(this.testUser.getId()),
+                v -> v.node("createdAt").asString().matches("^\\d{4}-\\d{2}-\\d{2}$")
         );
     }
 

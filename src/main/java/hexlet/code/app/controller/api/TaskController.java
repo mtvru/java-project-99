@@ -1,8 +1,8 @@
 package hexlet.code.app.controller.api;
 
-import hexlet.code.app.dto.IndexDTO;
 import hexlet.code.app.dto.TaskCreateDTO;
 import hexlet.code.app.dto.TaskDTO;
+import hexlet.code.app.dto.TaskParamsDTO;
 import hexlet.code.app.dto.TaskUpdateDTO;
 import hexlet.code.app.service.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,7 +34,7 @@ public class TaskController {
 
     /**
      * Get a list of all tasks.
-     * @param dto index data
+     * @param params filter and pagination
      * @return list of tasks
      */
     @Operation(summary = "Get list of all tasks")
@@ -42,8 +42,8 @@ public class TaskController {
             headers = {@io.swagger.v3.oas.annotations.headers.Header(
                     name = "X-Total-Count", description = "Total number of tasks")})
     @GetMapping
-    public ResponseEntity<List<TaskDTO>> index(IndexDTO dto) {
-        Page<TaskDTO> tasksPage = this.service.findAll(dto);
+    public ResponseEntity<List<TaskDTO>> index(TaskParamsDTO params) {
+        Page<TaskDTO> tasksPage = this.service.findAll(params);
         return ResponseEntity.ok()
                 .header("X-Total-Count", String.valueOf(tasksPage.getTotalElements()))
                 .body(tasksPage.getContent());

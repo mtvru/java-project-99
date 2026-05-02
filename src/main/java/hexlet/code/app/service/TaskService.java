@@ -1,17 +1,19 @@
 package hexlet.code.app.service;
 
-import hexlet.code.app.dto.IndexDTO;
 import hexlet.code.app.dto.TaskCreateDTO;
 import hexlet.code.app.dto.TaskDTO;
+import hexlet.code.app.dto.TaskParamsDTO;
 import hexlet.code.app.dto.TaskUpdateDTO;
 import hexlet.code.app.exception.ResourceNotFoundException;
 import hexlet.code.app.mapper.TaskMapper;
 import hexlet.code.app.model.Task;
 import hexlet.code.app.repository.TaskRepository;
+import hexlet.code.app.specification.TaskSpecification;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
@@ -21,15 +23,17 @@ import org.springframework.validation.annotation.Validated;
 public class TaskService {
     private final TaskRepository repository;
     private final TaskMapper mapper;
+    private final TaskSpecification specification;
 
     /**
      * Find all tasks.
-     * @param dto index data
+     * @param params filter and pagination data
      * @return page of tasks
      */
-    public Page<TaskDTO> findAll(IndexDTO dto) {
-        Pageable pageable = mapper.map(dto);
-        Page<Task> tasks = this.repository.findAll(pageable);
+    public Page<TaskDTO> findAll(TaskParamsDTO params) {
+        Pageable pageable = mapper.map(params);
+        Specification<Task> spec = specification.build(params);
+        Page<Task> tasks = this.repository.findAll(spec, pageable);
         return tasks.map(this.mapper::map);
     }
 

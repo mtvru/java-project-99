@@ -68,6 +68,7 @@ public class UserControllerTest {
             .andReturn();
         String body = result.getResponse().getContentAsString();
         assertThatJson(body).isArray().hasSize(2);
+        assertThatJson(body).node("[0].createdAt").asString().matches("^\\d{4}-\\d{2}-\\d{2}$");
     }
 
     @Test
@@ -78,12 +79,15 @@ public class UserControllerTest {
             .supply(Select.field(User::getEmail), () -> this.faker.internet().emailAddress())
             .supply(Select.field(User::getPassword), () -> this.faker.internet().password())
             .create();
-        user = this.userRepository.save(user);
+        this.userRepository.save(user);
         MvcResult result = this.mockMvc.perform(get("/api/users/" + user.getId()))
             .andExpect(status().isOk())
             .andReturn();
         String body = result.getResponse().getContentAsString();
-        assertThatJson(body);
+        assertThatJson(body).and(
+            v -> v.node("email").isEqualTo(user.getEmail()),
+            v -> v.node("createdAt").asString().matches("^\\d{4}-\\d{2}-\\d{2}$")
+        );
     }
 
     @Test
