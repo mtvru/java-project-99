@@ -5,6 +5,7 @@ plugins {
     id("org.sonarqube") version "7.2.2.6593"
     id("org.springframework.boot") version "3.5.11"
     id("io.spring.dependency-management") version "1.1.7"
+    id("io.sentry.jvm.gradle") version "6.5.0"
     kotlin("kapt") version "1.9.25"
 }
 
@@ -35,6 +36,17 @@ sonar {
         property("sonar.token", System.getenv("SONAR_TOKEN"))
         property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
     }
+}
+
+sentry {
+    // Generates a JVM (Java, Kotlin, etc.) source bundle and uploads your source code to Sentry.
+    // This enables source context, allowing you to see your source
+    // code as part of your stack traces in Sentry.
+    includeSourceContext = true
+
+    org = "maksim-er"
+    projectName = "task-manager"
+    authToken = System.getenv("SENTRY_AUTH_TOKEN")
 }
 
 jacoco {
