@@ -42,7 +42,7 @@ sentry {
     // Generates a JVM (Java, Kotlin, etc.) source bundle and uploads your source code to Sentry.
     // This enables source context, allowing you to see your source
     // code as part of your stack traces in Sentry.
-    includeSourceContext = true
+    includeSourceContext = false
 
     org = "maksim-er"
     projectName = "task-manager"
