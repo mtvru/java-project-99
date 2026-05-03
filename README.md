@@ -9,7 +9,7 @@ Task Manager is a full-fledged web application built on the Spring Boot stack, d
 
 [Website](https://java-project-72-dckw.onrender.com/)
 
-### Running the tool:
+### Running the web application:
 
 If the distribution is not built yet, run:
 
