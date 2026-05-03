@@ -18,4 +18,4 @@ ENV JAVA_OPTS="-Xmx512M -Xms512M"
 ENV SENTRY_AUTO_INIT=false
 ENV JAVA_TOOL_OPTIONS="-javaagent:/app/sentry-agent.jar"
 EXPOSE 8080
-CMD ["java", "-jar", "build/libs/hexlet-spring-blog-0.0.1-SNAPSHOT.jar"]
+CMD ["java", "-jar", "build/libs/app-0.0.1-SNAPSHOT.jar"]
