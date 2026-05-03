@@ -12,3 +12,8 @@ spring:
 rsa:
   public-key: classpath:certs/public.pem
   private-key: classpath:certs/private.pem
+
+seed:
+  admin:
+    email: hexlet@example.com
+    password: ${SEED_ADMIN_PASSWORD:qwerty}
