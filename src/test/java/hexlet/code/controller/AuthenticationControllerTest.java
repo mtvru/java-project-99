@@ -22,16 +22,24 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 public final class AuthenticationControllerTest {
+    private final MockMvc mockMvc;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final ObjectMapper om;
+    private final Faker faker;
+
     @Autowired
-    private MockMvc mockMvc;
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-    @Autowired
-    private ObjectMapper om;
-    @Autowired
-    private Faker faker;
+    public AuthenticationControllerTest(
+        MockMvc mockMvc, UserRepository userRepository,
+        PasswordEncoder passwordEncoder, ObjectMapper om, Faker faker
+    ) {
+        this.mockMvc = mockMvc;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.om = om;
+        this.faker = faker;
+    }
+
     private User testUser;
 
     @BeforeEach

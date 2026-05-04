@@ -35,18 +35,26 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public final class LabelControllerTest {
     private static final int NAME_SUFFIX_LENGTH = 5;
 
+    private final MockMvc mockMvc;
+    private final LabelRepository labelRepository;
+    private final TaskRepository taskRepository;
+    private final TaskStatusRepository taskStatusRepository;
+    private final ObjectMapper om;
+    private final Faker faker;
+
     @Autowired
-    private MockMvc mockMvc;
-    @Autowired
-    private LabelRepository labelRepository;
-    @Autowired
-    private TaskRepository taskRepository;
-    @Autowired
-    private TaskStatusRepository taskStatusRepository;
-    @Autowired
-    private ObjectMapper om;
-    @Autowired
-    private Faker faker;
+    public LabelControllerTest(
+        MockMvc mockMvc, LabelRepository labelRepository, TaskRepository taskRepository,
+        TaskStatusRepository taskStatusRepository, ObjectMapper om, Faker faker
+    ) {
+        this.mockMvc = mockMvc;
+        this.labelRepository = labelRepository;
+        this.taskRepository = taskRepository;
+        this.taskStatusRepository = taskStatusRepository;
+        this.om = om;
+        this.faker = faker;
+    }
+
     private Label testLabel;
 
     @BeforeEach

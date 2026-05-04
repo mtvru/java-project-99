@@ -39,20 +39,29 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public final class TaskControllerTest {
     private static final int DIGITS_COUNT = 3;
     private static final int TEST_INDEX = 100;
+
+    private final MockMvc mockMvc;
+    private final TaskRepository taskRepository;
+    private final TaskStatusRepository taskStatusRepository;
+    private final UserRepository userRepository;
+    private final LabelRepository labelRepository;
+    private final ObjectMapper om;
+    private final Faker faker;
+
     @Autowired
-    private MockMvc mockMvc;
-    @Autowired
-    private TaskRepository taskRepository;
-    @Autowired
-    private TaskStatusRepository taskStatusRepository;
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private LabelRepository labelRepository;
-    @Autowired
-    private ObjectMapper om;
-    @Autowired
-    private Faker faker;
+    public TaskControllerTest(
+        MockMvc mockMvc, TaskRepository taskRepository, TaskStatusRepository taskStatusRepository,
+        UserRepository userRepository, LabelRepository labelRepository, ObjectMapper om, Faker faker
+    ) {
+        this.mockMvc = mockMvc;
+        this.taskRepository = taskRepository;
+        this.taskStatusRepository = taskStatusRepository;
+        this.userRepository = userRepository;
+        this.labelRepository = labelRepository;
+        this.om = om;
+        this.faker = faker;
+    }
+
     private Task testTask;
     private User testUser;
     private TaskStatus testStatus;

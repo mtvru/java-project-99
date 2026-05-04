@@ -33,16 +33,23 @@ import java.util.Map;
 @SpringBootTest
 @AutoConfigureMockMvc
 public class UserControllerTest {
+    private final MockMvc mockMvc;
+    private final Faker faker;
+    private final UserRepository userRepository;
+    private final TaskRepository taskRepository;
+    private final ObjectMapper om;
+
     @Autowired
-    private MockMvc mockMvc;
-    @Autowired
-    private Faker faker;
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private TaskRepository taskRepository;
-    @Autowired
-    private ObjectMapper om;
+    public UserControllerTest(
+        MockMvc mockMvc, Faker faker, UserRepository userRepository,
+        TaskRepository taskRepository, ObjectMapper om
+    ) {
+        this.mockMvc = mockMvc;
+        this.faker = faker;
+        this.userRepository = userRepository;
+        this.taskRepository = taskRepository;
+        this.om = om;
+    }
 
     @Test
     @WithMockUser

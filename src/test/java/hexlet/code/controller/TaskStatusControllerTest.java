@@ -31,16 +31,25 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 public final class TaskStatusControllerTest {
     private static final int DIGITS_COUNT = 5;
+
+    private final MockMvc mockMvc;
+    private final TaskStatusRepository taskStatusRepository;
+    private final TaskRepository taskRepository;
+    private final ObjectMapper om;
+    private final Faker faker;
+
     @Autowired
-    private MockMvc mockMvc;
-    @Autowired
-    private TaskStatusRepository taskStatusRepository;
-    @Autowired
-    private TaskRepository taskRepository;
-    @Autowired
-    private ObjectMapper om;
-    @Autowired
-    private Faker faker;
+    public TaskStatusControllerTest(
+        MockMvc mockMvc, TaskStatusRepository taskStatusRepository,
+        TaskRepository taskRepository, ObjectMapper om, Faker faker
+    ) {
+        this.mockMvc = mockMvc;
+        this.taskStatusRepository = taskStatusRepository;
+        this.taskRepository = taskRepository;
+        this.om = om;
+        this.faker = faker;
+    }
+
     private TaskStatus testStatus;
 
     @BeforeEach
