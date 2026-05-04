@@ -13,5 +13,6 @@ data
 
 src/main/resources/certs/private.pem
 src/main/resources/certs/public.pem
+src/main/resources/static
 
 /node_modules

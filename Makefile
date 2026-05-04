@@ -1,5 +1,22 @@
 setup:
+	npm install
+	npx build-frontend
 	./gradlew clean bootJar
+
+backend:
+	./gradlew bootRun --args='--spring.profiles.active=development'
+
+clean:
+	./gradlew clean
+
+reload-classes:
+	./gradlew -t classes
+
+start-prod:
+	./gradlew bootRun --args='--spring.profiles.active=production'
+
+install:
+	./gradlew installDist
 
 run-dist:
 	java -jar build/libs/app-0.0.1-SNAPSHOT.jar
@@ -9,9 +26,6 @@ build:
 
 test:
 	./gradlew clean test
-
-bootRun:
-	SPRING_PROFILES_ACTIVE=development ./gradlew bootRun
 
 report:
 	./gradlew jacocoTestReport
