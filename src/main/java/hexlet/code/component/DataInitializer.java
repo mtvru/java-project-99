@@ -27,8 +27,8 @@ public final class DataInitializer implements CommandLineRunner {
         TaskStatusRepository taskStatusRepository,
         LabelRepository labelRepository,
         PasswordEncoder passwordEncoder,
-        @Value("${seed.admin.email}") String adminEmail,
-        @Value("${seed.admin.password}") String adminPassword
+        @Value("${seed.admin.email:hexlet@example.com}") String adminEmail,
+        @Value("${seed.admin.password:qwerty}") String adminPassword
     ) {
         this.userRepository = userRepository;
         this.taskStatusRepository = taskStatusRepository;
