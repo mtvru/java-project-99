@@ -16,19 +16,27 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 
-@Configuration(proxyBeanMethods = false)
-public final class PasswordEncodersConfig {
+@Configuration
+public class PasswordEncodersConfig {
     private final RsaKeyProperties rsaKeys;
 
     public PasswordEncodersConfig(RsaKeyProperties rsaKeys) {
         this.rsaKeys = rsaKeys;
     }
 
+    /**
+     * Configures the password encoder bean.
+     * @return BCryptPasswordEncoder instance.
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * Configures the JWT encoder bean using RSA keys.
+     * @return NimbusJwtEncoder instance.
+     */
     @Bean
     JwtEncoder jwtEncoder() {
         JWK jwk = new RSAKey.Builder(this.rsaKeys.getPublicKey()).privateKey(this.rsaKeys.getPrivateKey()).build();
@@ -36,6 +44,10 @@ public final class PasswordEncodersConfig {
         return new NimbusJwtEncoder(jwks);
     }
 
+    /**
+     * Configures the JWT decoder bean using the public RSA key.
+     * @return NimbusJwtDecoder instance.
+     */
     @Bean
     JwtDecoder jwtDecoder() {
         return NimbusJwtDecoder.withPublicKey(this.rsaKeys.getPublicKey()).build();

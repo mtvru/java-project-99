@@ -10,6 +10,7 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -22,9 +23,10 @@ import org.springframework.web.cors.CorsConfigurationSource;
 
 import java.util.Arrays;
 
-@Configuration(proxyBeanMethods = false)
+@Configuration
 @EnableWebSecurity
-public final class SecurityConfig {
+@EnableMethodSecurity
+public class SecurityConfig {
     private final JwtDecoder jwtDecoder;
     private final PasswordEncoder passwordEncoder;
     private final UserService userService;
@@ -35,6 +37,14 @@ public final class SecurityConfig {
         this.userService = userService;
     }
 
+    /**
+     * Configures the security filter chain.
+     * Sets up authorization rules, session management, CSRF, CORS, and JWT resource server.
+     * @param http HttpSecurity configuration.
+     * @param env Environment variables.
+     * @return SecurityFilterChain instance.
+     * @throws Exception if an error occurs during configuration.
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, Environment env)
         throws Exception {
@@ -64,19 +74,36 @@ public final class SecurityConfig {
             .build();
     }
 
+    /**
+     * Configures the AuthenticationManager bean.
+     * @param http HttpSecurity configuration.
+     * @return AuthenticationManager instance.
+     * @throws Exception if an error occurs during configuration.
+     */
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
         return http.getSharedObject(AuthenticationManagerBuilder.class).build();
     }
 
+    /**
+     * Configures the DaoAuthenticationProvider bean.
+     * Uses custom UserService and PasswordEncoder.
+     * @param auth AuthenticationManagerBuilder configuration.
+     * @return AuthenticationProvider instance.
+     */
     @Bean
-    public AuthenticationProvider daoAuthProvider() {
+    public AuthenticationProvider daoAuthProvider(AuthenticationManagerBuilder auth) {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(this.userService);
         provider.setPasswordEncoder(this.passwordEncoder);
         return provider;
     }
 
+    /**
+     * Configures the CORS configuration source.
+     * Sets allowed origins, methods, headers, and exposed headers.
+     * @return CorsConfigurationSource instance.
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();

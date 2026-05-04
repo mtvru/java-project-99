@@ -6,8 +6,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
-@Configuration(proxyBeanMethods = false)
-public final class JacksonConfig {
+@Configuration
+public class JacksonConfig {
+    /**
+     * Configures the Jackson2ObjectMapperBuilder bean.
+     * Sets the non-null inclusion policy and installs JsonNullableModule.
+     * @return Jackson2ObjectMapperBuilder instance.
+     */
     @Bean
     public Jackson2ObjectMapperBuilder objectMapperBuilder() {
         Jackson2ObjectMapperBuilder builder = new Jackson2ObjectMapperBuilder();
