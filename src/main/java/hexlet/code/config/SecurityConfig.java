@@ -59,7 +59,7 @@ public final class SecurityConfig {
                 .requestMatchers("/**/*.html").permitAll()
                 .anyRequest().authenticated())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .oauth2ResourceServer((rs) -> rs.jwt((jwt) -> jwt.decoder(this.jwtDecoder)))
+            .oauth2ResourceServer(rs -> rs.jwt(jwt -> jwt.decoder(this.jwtDecoder)))
             .httpBasic(Customizer.withDefaults())
             .build();
     }

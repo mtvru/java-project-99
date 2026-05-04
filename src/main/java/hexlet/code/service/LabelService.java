@@ -4,6 +4,7 @@ import hexlet.code.dto.IndexDTO;
 import hexlet.code.dto.LabelCreateDTO;
 import hexlet.code.dto.LabelDTO;
 import hexlet.code.dto.LabelUpdateDTO;
+import hexlet.code.exception.EntityInUseException;
 import hexlet.code.exception.ResourceNotFoundException;
 import hexlet.code.mapper.LabelMapper;
 import hexlet.code.model.Label;
@@ -20,6 +21,8 @@ import org.springframework.validation.annotation.Validated;
 @Service
 @Validated
 public class LabelService {
+    private static final String LABEL_NOT_FOUND_MESSAGE = "Label with id %d not found";
+
     private final LabelRepository repository;
     private final TaskRepository taskRepository;
     private final LabelMapper mapper;
@@ -43,7 +46,7 @@ public class LabelService {
      */
     public LabelDTO findById(Long id) {
         Label label = this.repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Label with id " + id + " not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(LABEL_NOT_FOUND_MESSAGE, id)));
         return this.mapper.map(label);
     }
 
@@ -67,7 +70,7 @@ public class LabelService {
      */
     public LabelDTO update(Long id, @Valid LabelUpdateDTO dto) {
         Label label = this.repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Label with id " + id + " not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(LABEL_NOT_FOUND_MESSAGE, id)));
         this.mapper.update(dto, label);
         this.repository.save(label);
         return this.mapper.map(label);
@@ -78,13 +81,13 @@ public class LabelService {
      * Checks if the label is linked to tasks before deletion.
      * @param id label identifier
      * @throws ResourceNotFoundException if the label is not found
-     * @throws RuntimeException if the label is linked to tasks
+     * @throws EntityInUseException if the label is linked to tasks
      */
     public void delete(Long id) {
         Label label = this.repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Label with id " + id + " not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(LABEL_NOT_FOUND_MESSAGE, id)));
         if (this.taskRepository.existsByTaskLabelsLabel(label)) {
-            throw new RuntimeException("Cannot delete label linked to tasks");
+            throw new EntityInUseException("Cannot delete label linked to tasks");
         }
         this.repository.deleteById(id);
     }

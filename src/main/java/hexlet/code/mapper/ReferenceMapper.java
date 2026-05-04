@@ -7,6 +7,7 @@ import org.mapstruct.MappingConstants;
 import org.mapstruct.TargetType;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -25,7 +26,7 @@ public abstract class ReferenceMapper {
 
     public final <T extends BaseEntity> Set<T> toEntitySet(Set<Long> ids, @TargetType Class<T> entityClass) {
         if (ids == null) {
-            return null;
+            return Collections.emptySet();
         }
         return ids.stream()
             .map(id -> this.toEntity(id, entityClass))

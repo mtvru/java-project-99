@@ -4,6 +4,7 @@ import hexlet.code.dto.IndexDTO;
 import hexlet.code.dto.UserCreateDTO;
 import hexlet.code.dto.UserDTO;
 import hexlet.code.dto.UserUpdateDTO;
+import hexlet.code.exception.EntityInUseException;
 import hexlet.code.exception.ResourceNotFoundException;
 import hexlet.code.mapper.UserMapper;
 import hexlet.code.model.User;
@@ -22,6 +23,8 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @AllArgsConstructor
 public class UserService implements UserDetailsService {
+    private static final String USER_NOT_FOUND_MESSAGE = "User with id %d not found";
+
     private final UserRepository repository;
     private final UserMapper mapper;
 
@@ -68,7 +71,7 @@ public class UserService implements UserDetailsService {
     public UserDTO findById(Long id) {
         return this.repository.findById(id)
                 .map(this.mapper::map)
-                .orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(USER_NOT_FOUND_MESSAGE, id)));
     }
 
     /**
@@ -80,7 +83,7 @@ public class UserService implements UserDetailsService {
      */
     public UserDTO update(Long id, @Valid UserUpdateDTO dto) {
         User user = this.repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(USER_NOT_FOUND_MESSAGE, id)));
         this.mapper.update(dto, user);
         this.repository.save(user);
         return this.mapper.map(user);
@@ -90,13 +93,13 @@ public class UserService implements UserDetailsService {
      * Delete user.
      * @param id user id
      * @throws ResourceNotFoundException if the user is not found
-     * @throws RuntimeException if the user is linked to tasks
+     * @throws EntityInUseException if the user is linked to tasks
      */
     public void delete(Long id) {
         User user = this.repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(USER_NOT_FOUND_MESSAGE, id)));
         if (this.repository.existsByTasks(user)) {
-            throw new RuntimeException("Cannot delete user linked to tasks");
+            throw new EntityInUseException("Cannot delete user linked to tasks");
         }
         this.repository.deleteById(id);
     }

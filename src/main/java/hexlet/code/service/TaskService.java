@@ -21,6 +21,8 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @AllArgsConstructor
 public class TaskService {
+    private static final String TASK_NOT_FOUND_MESSAGE = "Task with id %d not found";
+
     private final TaskRepository repository;
     private final TaskMapper mapper;
     private final TaskSpecification specification;
@@ -45,7 +47,7 @@ public class TaskService {
      */
     public TaskDTO findById(Long id) {
         Task task = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Task with id " + id + " not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(TASK_NOT_FOUND_MESSAGE, id)));
         return mapper.map(task);
     }
 
@@ -69,7 +71,7 @@ public class TaskService {
      */
     public TaskDTO update(Long id, @Valid TaskUpdateDTO dto) {
         Task task = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Task with id " + id + " not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(TASK_NOT_FOUND_MESSAGE, id)));
         mapper.update(dto, task);
         repository.save(task);
         return mapper.map(task);
