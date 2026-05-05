@@ -1,6 +1,5 @@
 [versions]
-# Spring
-spring-boot = "3.5.5"
+spring-boot = "3.4.4"
 spring-dependency = "1.1.7"
 
 # Plugins
@@ -14,9 +13,9 @@ mapstruct = "1.6.3"
 datafaker = "2.0.1"
 instancio = "3.3.0"
 jackson-nullable = "0.2.6"
-springdoc = "2.8.17"
+springdoc = "2.8.4"
 postgresql = "42.7.9"
-json-unit = "3.2.2"
+json-unit = "5.1.1"
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
