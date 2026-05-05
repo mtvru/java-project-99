@@ -17,6 +17,7 @@ COPY ./settings.gradle.kts /app/settings.gradle.kts
 COPY ./Makefile /app/Makefile
 COPY ./package.json /app/package.json
 COPY ./package-lock.json /app/package-lock.json
+COPY ./config /app/config
 
 RUN npm install
 RUN npx build-frontend
