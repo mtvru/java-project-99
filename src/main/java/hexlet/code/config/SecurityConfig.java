@@ -62,7 +62,7 @@ public class SecurityConfig {
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers(HttpMethod.GET, "/", "/welcome").permitAll()
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/assets/**", "/favicon.ico").permitAll()
-                .requestMatchers("/**/*.html").permitAll()
+                .requestMatchers("/index.html").permitAll()
                 .anyRequest().authenticated())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .oauth2ResourceServer(rs -> rs.jwt(jwt -> jwt.decoder(this.jwtDecoder)))
