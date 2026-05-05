@@ -78,17 +78,18 @@ public class SecurityConfig {
      */
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
-        return http.getSharedObject(AuthenticationManagerBuilder.class).build();
+        return http.getSharedObject(AuthenticationManagerBuilder.class)
+                .authenticationProvider(daoAuthProvider())
+                .build();
     }
 
     /**
      * Configures the DaoAuthenticationProvider bean.
      * Uses custom UserService and PasswordEncoder.
-     * @param auth AuthenticationManagerBuilder configuration.
      * @return AuthenticationProvider instance.
      */
     @Bean
-    public AuthenticationProvider daoAuthProvider(AuthenticationManagerBuilder auth) {
+    public AuthenticationProvider daoAuthProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(this.userService);
         provider.setPasswordEncoder(this.passwordEncoder);
