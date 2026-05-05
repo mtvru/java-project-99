@@ -8,7 +8,6 @@ import hexlet.code.model.User;
 import hexlet.code.repository.LabelRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -19,34 +18,25 @@ public final class DataInitializer implements CommandLineRunner {
     private final TaskStatusRepository taskStatusRepository;
     private final LabelRepository labelRepository;
     private final PasswordEncoder passwordEncoder;
-    private final String adminEmail;
-    private final String adminPassword;
 
     public DataInitializer(
         UserRepository userRepository,
         TaskStatusRepository taskStatusRepository,
         LabelRepository labelRepository,
-        PasswordEncoder passwordEncoder,
-        @Value("${seed.admin.email:hexlet@example.com}") String adminEmail,
-        @Value("${seed.admin.password:qwerty}") String adminPassword
+        PasswordEncoder passwordEncoder
     ) {
         this.userRepository = userRepository;
         this.taskStatusRepository = taskStatusRepository;
         this.labelRepository = labelRepository;
         this.passwordEncoder = passwordEncoder;
-        this.adminEmail = adminEmail;
-        this.adminPassword = adminPassword;
     }
 
     @Override
     public void run(String... args) throws Exception {
         User userData = new User();
-
-        if (this.userRepository.findByEmail(this.adminEmail).isEmpty()) {
-            userData.setEmail(this.adminEmail);
-            userData.setPassword(this.passwordEncoder.encode(this.adminPassword));
-            this.userRepository.save(userData);
-        }
+        userData.setEmail("hexlet@example.com");
+        userData.setPassword(this.passwordEncoder.encode("qwerty"));
+        this.userRepository.save(userData);
 
         for (TaskStatusName statusName : TaskStatusName.values()) {
             if (this.taskStatusRepository.findBySlug(statusName.getSlug()).isEmpty()) {
