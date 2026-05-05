@@ -1,21 +1,19 @@
 plugins {
-    java
+    application
     id("jacoco")
     id("checkstyle")
-    id("org.sonarqube") version "7.2.2.6593"
-    id("org.springframework.boot") version "3.5.11"
-    id("io.spring.dependency-management") version "1.1.7"
-    id("io.sentry.jvm.gradle") version "6.5.0"
-    kotlin("kapt") version "1.9.25"
+
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
+    alias(libs.plugins.sonarqube)
+    alias(libs.plugins.sentry)
 }
 
 group = "hexlet.code"
 version = "0.0.1-SNAPSHOT"
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
+application {
+    mainClass.set("hexlet.code.AppApplication")
 }
 
 configurations {
@@ -39,11 +37,11 @@ sonar {
 }
 
 jacoco {
-    toolVersion = "0.8.14"
+    toolVersion = libs.versions.jacoco.get()
 }
 
 checkstyle {
-    toolVersion = "10.12.4"
+    toolVersion = libs.versions.checkstyle.get()
 }
 
 dependencies {
@@ -52,23 +50,28 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+
     implementation(libs.mapstruct)
     implementation(libs.datafaker)
     implementation(libs.instancio)
-    implementation(libs.jackson.databind.nullable)
-    implementation(libs.springdoc.openapi.ui)
-    implementation(libs.springdoc.openapi.api)
+    implementation(libs.jackson.nullable)
+    implementation(libs.springdoc.ui)
+    implementation(libs.springdoc.api)
     implementation(libs.postgresql)
+
     compileOnly("org.projectlombok:lombok")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     runtimeOnly("com.h2database:h2")
+
     annotationProcessor("org.projectlombok:lombok")
     annotationProcessor(libs.mapstruct.processor)
+
     testImplementation(platform("org.junit:junit-bom"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("org.springframework.security:spring-security-test")
+    testImplementation(libs.spring.security.test)
     testImplementation(libs.json.unit)
+
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testAnnotationProcessor(libs.mapstruct.processor)
 }
