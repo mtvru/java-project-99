@@ -2,7 +2,6 @@
 # Spring
 spring-boot = "3.5.5"
 spring-dependency = "1.1.7"
-spring-security-test = "6.5.3"
 
 # Plugins
 sonarqube = "7.2.2.6593"
@@ -11,7 +10,7 @@ checkstyle = "10.12.4"
 sentry = "6.5.0"
 
 # Libraries
-mapstruct = "1.5.5.Final"
+mapstruct = "1.6.3"
 datafaker = "2.0.1"
 instancio = "3.3.0"
 jackson-nullable = "0.2.6"
@@ -40,5 +39,3 @@ springdoc-api = { group = "org.springdoc", name = "springdoc-openapi-starter-web
 postgresql = { group = "org.postgresql", name = "postgresql", version.ref = "postgresql" }
 
 json-unit = { group = "net.javacrumbs.json-unit", name = "json-unit-assertj", version.ref = "json-unit" }
-
-spring-security-test = { module = "org.springframework.security:spring-security-test", version.ref = "spring-security-test" }

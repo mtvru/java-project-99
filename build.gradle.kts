@@ -69,7 +69,7 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation(libs.spring.security.test)
+    testImplementation("org.springframework.security:spring-security-test")
     testImplementation(libs.json.unit)
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

@@ -2,10 +2,10 @@ package hexlet.code.mapper;
 
 import hexlet.code.model.BaseEntity;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.TargetType;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
     componentModel = MappingConstants.ComponentModel.SPRING
 )
 public abstract class ReferenceMapper {
-    @Autowired
+    @PersistenceContext
     private EntityManager entityManager;
 
     public final <T extends BaseEntity> T toEntity(Long id, @TargetType Class<T> entityClass) {
