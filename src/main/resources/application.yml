@@ -1,6 +1,9 @@
 logging:
-  pattern:
-    dateformat: "yyyy-MM-dd HH:mm:ss"
+  level:
+    root: WARN
+    org:
+      springframework:
+        security: DEBUG
 
 spring:
   output:
