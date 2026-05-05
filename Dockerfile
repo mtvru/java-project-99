@@ -1,4 +1,4 @@
-FROM gradle:9.2-jdk21
+FROM gradle:8.13-jdk21
 
 RUN apt-get update && apt-get install -y nodejs npm make
 
