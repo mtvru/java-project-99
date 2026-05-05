@@ -34,9 +34,11 @@ public final class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         User userData = new User();
-        userData.setEmail("hexlet@example.com");
-        userData.setPassword(this.passwordEncoder.encode("qwerty"));
-        this.userRepository.save(userData);
+        if (this.userRepository.findByEmail("hexlet@example.com").isEmpty()) {
+            userData.setEmail("hexlet@example.com");
+            userData.setPassword(this.passwordEncoder.encode("qwerty"));
+            this.userRepository.save(userData);
+        }
 
         for (TaskStatusName statusName : TaskStatusName.values()) {
             if (this.taskStatusRepository.findBySlug(statusName.getSlug()).isEmpty()) {
