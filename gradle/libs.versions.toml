@@ -10,8 +10,8 @@ sentry = "6.5.0"
 
 # Libraries
 mapstruct = "1.6.3"
-datafaker = "2.0.1"
-instancio = "3.3.0"
+datafaker = "2.5.4"
+instancio = "5.5.1"
 jackson-nullable = "0.2.6"
 springdoc = "2.8.4"
 postgresql = "42.7.9"
