@@ -18,7 +18,9 @@ COPY ./Makefile /app/Makefile
 COPY ./package.json /app/package.json
 COPY ./package-lock.json /app/package-lock.json
 
-RUN make setup
+RUN npm install
+RUN npx build-frontend
+RUN ./gradlew clean build
 
 ENV JAVA_OPTS="-Xmx512M -Xms512M"
 ENV SENTRY_AUTO_INIT=false
