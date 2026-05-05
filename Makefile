@@ -1,8 +1,3 @@
-setup:
-	npm install
-	npx build-frontend
-	./gradlew clean build
-
 backend:
 	./gradlew bootRun --args='--spring.profiles.active=development'
 
