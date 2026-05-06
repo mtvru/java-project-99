@@ -4,7 +4,7 @@ import hexlet.code.dto.TaskCreateDTO;
 import hexlet.code.dto.TaskDTO;
 import hexlet.code.dto.TaskParamsDTO;
 import hexlet.code.dto.TaskUpdateDTO;
-import hexlet.code.service.TaskService;
+import hexlet.code.service.CRUDService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -30,7 +30,7 @@ import java.util.List;
 @AllArgsConstructor
 @Tag(name = "Tasks", description = "Operations with tasks")
 public class TaskController {
-    private final TaskService service;
+    private final CRUDService<TaskDTO, TaskParamsDTO, TaskCreateDTO, TaskUpdateDTO> service;
 
     /**
      * Get a list of all tasks.

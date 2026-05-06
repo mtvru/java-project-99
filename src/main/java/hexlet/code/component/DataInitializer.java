@@ -5,6 +5,7 @@ import hexlet.code.model.TaskStatus;
 import hexlet.code.model.enums.LabelName;
 import hexlet.code.model.enums.TaskStatusName;
 import hexlet.code.model.User;
+import hexlet.code.model.enums.UserRole;
 import hexlet.code.repository.LabelRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
@@ -37,6 +38,7 @@ public final class DataInitializer implements CommandLineRunner {
         if (this.userRepository.findByEmail("hexlet@example.com").isEmpty()) {
             userData.setEmail("hexlet@example.com");
             userData.setPassword(this.passwordEncoder.encode("qwerty"));
+            userData.setRole(UserRole.ADMIN);
             this.userRepository.save(userData);
         }
 

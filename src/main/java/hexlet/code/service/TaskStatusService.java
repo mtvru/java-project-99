@@ -4,7 +4,6 @@ import hexlet.code.dto.IndexDTO;
 import hexlet.code.dto.TaskStatusCreateDTO;
 import hexlet.code.dto.TaskStatusDTO;
 import hexlet.code.dto.TaskStatusUpdateDTO;
-import hexlet.code.exception.EntityInUseException;
 import hexlet.code.exception.ResourceNotFoundException;
 import hexlet.code.mapper.TaskStatusMapper;
 import hexlet.code.model.TaskStatus;
@@ -19,7 +18,8 @@ import org.springframework.validation.annotation.Validated;
 @AllArgsConstructor
 @Service
 @Validated
-public class TaskStatusService {
+public class TaskStatusService
+        implements CRUDService<TaskStatusDTO, IndexDTO, TaskStatusCreateDTO, TaskStatusUpdateDTO> {
     private static final String TASK_STATUS_NOT_FOUND_MESSAGE = "TaskStatus with id %d not found";
 
     private final TaskStatusRepository repository;
@@ -78,14 +78,8 @@ public class TaskStatusService {
      * Delete task status.
      * @param id status id
      * @throws ResourceNotFoundException if the status is not found
-     * @throws EntityInUseException if the status is linked to tasks
      */
     public void delete(Long id) {
-        TaskStatus status = this.repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format(TASK_STATUS_NOT_FOUND_MESSAGE, id)));
-        if (this.repository.existsByTasks(status)) {
-            throw new EntityInUseException("Cannot delete status linked to tasks");
-        }
         this.repository.deleteById(id);
     }
 }

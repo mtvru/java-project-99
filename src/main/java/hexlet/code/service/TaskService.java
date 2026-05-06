@@ -20,7 +20,7 @@ import org.springframework.validation.annotation.Validated;
 @Service
 @Validated
 @AllArgsConstructor
-public class TaskService {
+public class TaskService implements CRUDService<TaskDTO, TaskParamsDTO, TaskCreateDTO, TaskUpdateDTO> {
     private static final String TASK_NOT_FOUND_MESSAGE = "Task with id %d not found";
 
     private final TaskRepository repository;

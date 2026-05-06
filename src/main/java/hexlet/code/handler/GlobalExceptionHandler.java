@@ -8,6 +8,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -23,8 +24,10 @@ import java.util.UUID;
 @ControllerAdvice
 @Slf4j
 public final class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
-    private static final String INTEGRITY_VIOLATION_MSG =
-        "Data integrity violation. Check if this record already exists.";
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<Object> handleAuthorizationDeniedException(AuthorizationDeniedException ex) {
+        return this.buildErrorResponse(ex, HttpStatus.FORBIDDEN, ex.getMessage());
+    }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Object> handleResourceNotFoundException(ResourceNotFoundException ex) {
@@ -33,7 +36,22 @@ public final class GlobalExceptionHandler extends ResponseEntityExceptionHandler
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Object> handleDataIntegrity(DataIntegrityViolationException ex) {
-        return this.buildErrorResponse(ex, HttpStatus.CONFLICT, INTEGRITY_VIOLATION_MSG);
+        Throwable cause = ex.getCause();
+        if (cause instanceof org.hibernate.exception.ConstraintViolationException cve) {
+            String sqlState = cve.getSQLState();
+            if ("23505".equals(sqlState)) {
+                return buildErrorResponse(ex, HttpStatus.CONFLICT, "Record already exists");
+            }
+            if ("23503".equals(sqlState)) {
+                return buildErrorResponse(
+                    ex, HttpStatus.CONFLICT, "Cannot delete or update entity because it is referenced"
+                );
+            }
+            if ("23502".equals(sqlState)) {
+                return buildErrorResponse(ex, HttpStatus.CONFLICT, "Required field is missing");
+            }
+        }
+        return buildErrorResponse(ex, HttpStatus.CONFLICT, "Data integrity violation.");
     }
 
     @ExceptionHandler(AuthenticationException.class)

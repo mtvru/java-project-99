@@ -4,10 +4,10 @@ import hexlet.code.dto.IndexDTO;
 import hexlet.code.dto.UserCreateDTO;
 import hexlet.code.dto.UserDTO;
 import hexlet.code.dto.UserUpdateDTO;
-import hexlet.code.exception.EntityInUseException;
 import hexlet.code.exception.ResourceNotFoundException;
 import hexlet.code.mapper.UserMapper;
 import hexlet.code.model.User;
+import hexlet.code.model.enums.UserRole;
 import hexlet.code.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -22,7 +22,7 @@ import org.springframework.validation.annotation.Validated;
 @Service
 @Validated
 @AllArgsConstructor
-public class UserService implements UserDetailsService {
+public class UserService implements UserDetailsService, CRUDService<UserDTO, IndexDTO, UserCreateDTO, UserUpdateDTO> {
     private static final String USER_NOT_FOUND_MESSAGE = "User with id %d not found";
 
     private final UserRepository repository;
@@ -47,6 +47,7 @@ public class UserService implements UserDetailsService {
      */
     public UserDTO create(@Valid UserCreateDTO dto) {
         User user = this.mapper.map(dto);
+        user.setRole(UserRole.USER);
         user = this.repository.save(user);
         return this.mapper.map(user);
     }
@@ -93,14 +94,8 @@ public class UserService implements UserDetailsService {
      * Delete user.
      * @param id user id
      * @throws ResourceNotFoundException if the user is not found
-     * @throws EntityInUseException if the user is linked to tasks
      */
     public void delete(Long id) {
-        User user = this.repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format(USER_NOT_FOUND_MESSAGE, id)));
-        if (this.repository.existsByTasks(user)) {
-            throw new EntityInUseException("Cannot delete user linked to tasks");
-        }
         this.repository.deleteById(id);
     }
 }

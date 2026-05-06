@@ -4,7 +4,7 @@ import hexlet.code.dto.IndexDTO;
 import hexlet.code.dto.LabelCreateDTO;
 import hexlet.code.dto.LabelDTO;
 import hexlet.code.dto.LabelUpdateDTO;
-import hexlet.code.service.LabelService;
+import hexlet.code.service.CRUDService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -30,7 +30,7 @@ import java.util.List;
 @AllArgsConstructor
 @Tag(name = "Labels", description = "Operations with labels")
 public class LabelController {
-    private final LabelService service;
+    private final CRUDService<LabelDTO, IndexDTO, LabelCreateDTO, LabelUpdateDTO> service;
 
     /**
      * Get a list of all labels.

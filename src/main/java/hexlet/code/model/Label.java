@@ -47,6 +47,6 @@ public class Label implements BaseEntity {
     @CreatedDate
     private LocalDate createdAt;
 
-    @OneToMany(mappedBy = "label", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "label", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private Set<TaskLabel> taskLabels = new HashSet<>();
 }

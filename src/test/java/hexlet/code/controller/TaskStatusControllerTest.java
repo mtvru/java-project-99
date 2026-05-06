@@ -1,26 +1,31 @@
 package hexlet.code.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import hexlet.code.TestUtils;
+import hexlet.code.model.Task;
 import hexlet.code.model.TaskStatus;
+import hexlet.code.model.User;
 import hexlet.code.repository.TaskRepository;
 import hexlet.code.repository.TaskStatusRepository;
-import net.datafaker.Faker;
-import org.instancio.Instancio;
-import org.instancio.Select;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.JwtRequestPostProcessor;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -30,41 +35,38 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 public final class TaskStatusControllerTest {
-    private static final int DIGITS_COUNT = 5;
-
-    private final MockMvc mockMvc;
+    private final WebApplicationContext wac;
     private final TaskStatusRepository taskStatusRepository;
     private final TaskRepository taskRepository;
+    private final TestUtils testUtils;
     private final ObjectMapper om;
-    private final Faker faker;
+    private MockMvc mockMvc;
+    private JwtRequestPostProcessor token;
+    private TaskStatus testStatus;
+    private User testUser;
 
     @Autowired
     public TaskStatusControllerTest(
-        MockMvc mockMvc, TaskStatusRepository taskStatusRepository,
-        TaskRepository taskRepository, ObjectMapper om, Faker faker
+            WebApplicationContext wac, TaskStatusRepository taskStatusRepository,
+            TaskRepository taskRepository, ObjectMapper om, TestUtils testUtils
     ) {
-        this.mockMvc = mockMvc;
+        this.wac = wac;
         this.taskStatusRepository = taskStatusRepository;
         this.taskRepository = taskRepository;
         this.om = om;
-        this.faker = faker;
+        this.testUtils = testUtils;
     }
-
-    private TaskStatus testStatus;
 
     @BeforeEach
     public void setUp() {
-        this.taskRepository.deleteAll();
-        this.taskStatusRepository.deleteAll();
-        this.testStatus = Instancio.of(TaskStatus.class)
-                .ignore(Select.field(TaskStatus::getId))
-                .ignore(Select.field(TaskStatus::getCreatedAt))
-                .supply(Select.field(TaskStatus::getName),
-                        () -> this.faker.lorem().word() + this.faker.number().digits(DIGITS_COUNT))
-                .supply(Select.field(TaskStatus::getSlug),
-                        () -> this.faker.internet().slug() + this.faker.number().digits(DIGITS_COUNT))
-                .create();
-        this.taskStatusRepository.save(this.testStatus);
+        this.testUtils.clear();
+        this.mockMvc = MockMvcBuilders.webAppContextSetup(wac)
+                .defaultResponseCharacterEncoding(StandardCharsets.UTF_8)
+                .apply(springSecurity())
+                .build();
+        this.testUser = testUtils.createUser();
+        this.token = jwt().jwt(builder -> builder.subject(this.testUser.getEmail()));
+        this.testStatus = testUtils.createTaskStatus();
     }
 
     @Test
@@ -91,7 +93,6 @@ public final class TaskStatusControllerTest {
     }
 
     @Test
-    @WithMockUser
     public void testCreate() throws Exception {
         Map<String, String> data = Map.of(
                 "name", "NewStatus",
@@ -99,6 +100,7 @@ public final class TaskStatusControllerTest {
         );
 
         this.mockMvc.perform(post("/api/task_statuses")
+                        .with(this.token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(this.om.writeValueAsString(data)))
                 .andExpect(status().isCreated());
@@ -108,11 +110,11 @@ public final class TaskStatusControllerTest {
     }
 
     @Test
-    @WithMockUser
     public void testUpdate() throws Exception {
         Map<String, String> data = Map.of("name", "UpdatedName");
 
         this.mockMvc.perform(put("/api/task_statuses/{id}", this.testStatus.getId())
+                        .with(this.token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(this.om.writeValueAsString(data)))
                 .andExpect(status().isOk());
@@ -123,11 +125,11 @@ public final class TaskStatusControllerTest {
     }
 
     @Test
-    @WithMockUser
     public void testPartialUpdate() throws Exception {
         Map<String, String> data = Map.of("slug", "updated_slug");
 
         this.mockMvc.perform(put("/api/task_statuses/{id}", this.testStatus.getId())
+                        .with(this.token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(this.om.writeValueAsString(data)))
                 .andExpect(status().isOk());
@@ -138,9 +140,9 @@ public final class TaskStatusControllerTest {
     }
 
     @Test
-    @WithMockUser
     public void testDelete() throws Exception {
-        this.mockMvc.perform(delete("/api/task_statuses/{id}", this.testStatus.getId()))
+        this.mockMvc.perform(delete("/api/task_statuses/{id}", this.testStatus.getId())
+                        .with(this.token))
                 .andExpect(status().isNoContent());
 
         assertThat(this.taskStatusRepository.existsById(this.testStatus.getId())).isFalse();
@@ -168,5 +170,19 @@ public final class TaskStatusControllerTest {
     public void testDeleteWithoutAuth() throws Exception {
         this.mockMvc.perform(delete("/api/task_statuses/{id}", this.testStatus.getId()))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    public void testDeleteWithTask() throws Exception {
+        Task task = new Task();
+        task.setName("task");
+        task.setTaskStatus(this.testStatus);
+        this.taskRepository.save(task);
+
+        this.mockMvc.perform(delete("/api/task_statuses/{id}", this.testStatus.getId())
+                        .with(this.token))
+                .andExpect(status().isConflict());
+
+        assertThat(this.taskStatusRepository.existsById(this.testStatus.getId())).isTrue();
     }
 }

@@ -4,7 +4,7 @@ import hexlet.code.dto.IndexDTO;
 import hexlet.code.dto.TaskStatusCreateDTO;
 import hexlet.code.dto.TaskStatusDTO;
 import hexlet.code.dto.TaskStatusUpdateDTO;
-import hexlet.code.service.TaskStatusService;
+import hexlet.code.service.CRUDService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -30,7 +30,7 @@ import java.util.List;
 @AllArgsConstructor
 @Tag(name = "Task Statuses", description = "Operations with task statuses")
 public class TaskStatusController {
-    private final TaskStatusService service;
+    private final CRUDService<TaskStatusDTO, IndexDTO, TaskStatusCreateDTO, TaskStatusUpdateDTO> service;
 
     /**
      * Get a list of all task statuses.

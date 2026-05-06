@@ -1,33 +1,35 @@
 package hexlet.code.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import hexlet.code.TestUtils;
 import hexlet.code.model.Label;
 import hexlet.code.model.Task;
 import hexlet.code.model.TaskStatus;
 import hexlet.code.model.User;
-import hexlet.code.repository.LabelRepository;
 import hexlet.code.repository.TaskRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
-import net.datafaker.Faker;
-import org.instancio.Instancio;
-import org.instancio.Select;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.JwtRequestPostProcessor;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -37,71 +39,50 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 public final class TaskControllerTest {
-    private static final int DIGITS_COUNT = 3;
-    private static final int TEST_INDEX = 100;
+    private static final int TEST_INDEX = 10;
 
-    private final MockMvc mockMvc;
+    private final WebApplicationContext wac;
     private final TaskRepository taskRepository;
     private final TaskStatusRepository taskStatusRepository;
     private final UserRepository userRepository;
-    private final LabelRepository labelRepository;
     private final ObjectMapper om;
-    private final Faker faker;
-
-    @Autowired
-    public TaskControllerTest(
-        MockMvc mockMvc, TaskRepository taskRepository, TaskStatusRepository taskStatusRepository,
-        UserRepository userRepository, LabelRepository labelRepository, ObjectMapper om, Faker faker
-    ) {
-        this.mockMvc = mockMvc;
-        this.taskRepository = taskRepository;
-        this.taskStatusRepository = taskStatusRepository;
-        this.userRepository = userRepository;
-        this.labelRepository = labelRepository;
-        this.om = om;
-        this.faker = faker;
-    }
-
+    private final TestUtils testUtils;
+    private MockMvc mockMvc;
+    private JwtRequestPostProcessor token;
     private Task testTask;
     private User testUser;
     private TaskStatus testStatus;
 
+    @Autowired
+    public TaskControllerTest(
+        WebApplicationContext wac, TaskRepository taskRepository, TaskStatusRepository taskStatusRepository,
+        UserRepository userRepository, ObjectMapper om, TestUtils testUtils
+    ) {
+        this.wac = wac;
+        this.taskRepository = taskRepository;
+        this.taskStatusRepository = taskStatusRepository;
+        this.userRepository = userRepository;
+        this.om = om;
+        this.testUtils = testUtils;
+    }
+
     @BeforeEach
     public void setUp() {
-        this.taskRepository.deleteAll();
-        this.taskStatusRepository.deleteAll();
-        this.userRepository.deleteAll();
-        this.labelRepository.deleteAll();
-        this.testUser = Instancio.of(User.class)
-                .ignore(Select.field(User::getId))
-                .supply(Select.field(User::getEmail), () -> this.faker.internet().emailAddress())
-                .supply(Select.field(User::getPassword), () -> this.faker.internet().password())
-                .create();
-        this.userRepository.save(this.testUser);
-        this.testStatus = Instancio.of(TaskStatus.class)
-                .ignore(Select.field(TaskStatus::getId))
-                .supply(Select.field(TaskStatus::getName),
-                        () -> this.faker.lorem().word() + this.faker.number().digits(DIGITS_COUNT))
-                .supply(Select.field(TaskStatus::getSlug),
-                        () -> this.faker.internet().slug() + this.faker.number().digits(DIGITS_COUNT))
-                .create();
-        this.taskStatusRepository.save(this.testStatus);
-        this.testTask = Instancio.of(Task.class)
-                .ignore(Select.field(Task::getId))
-                .ignore(Select.field(Task::getCreatedAt))
-                .ignore(Select.field(Task::getTaskLabels))
-                .supply(Select.field(Task::getName), () -> this.faker.lorem().sentence())
-                .supply(Select.field(Task::getDescription), () -> this.faker.lorem().paragraph())
-                .supply(Select.field(Task::getTaskStatus), () -> this.testStatus)
-                .supply(Select.field(Task::getAssignee), () -> this.testUser)
-                .create();
-        this.taskRepository.save(this.testTask);
+        this.testUtils.clear();
+        this.mockMvc = MockMvcBuilders.webAppContextSetup(wac)
+                .defaultResponseCharacterEncoding(StandardCharsets.UTF_8)
+                .apply(springSecurity())
+                .build();
+        this.testUser = this.testUtils.createUser();
+        this.token = jwt().jwt(builder -> builder.subject(this.testUser.getEmail()));
+        this.testStatus = this.testUtils.createTaskStatus();
+        this.testTask = this.testUtils.createTask(this.testUser, this.testStatus, Set.of());
     }
 
     @Test
-    @WithMockUser
     public void testIndex() throws Exception {
-        MvcResult result = this.mockMvc.perform(get("/api/tasks"))
+        MvcResult result = this.mockMvc.perform(get("/api/tasks")
+                        .with(this.token))
                 .andExpect(status().isOk())
                 .andReturn();
         String body = result.getResponse().getContentAsString();
@@ -110,69 +91,57 @@ public final class TaskControllerTest {
     }
 
     @Test
-    @WithMockUser
     public void testIndexWithFilter() throws Exception {
-        Label label = Instancio.of(Label.class)
-                .ignore(Select.field(Label::getId))
-                .ignore(Select.field(Label::getTaskLabels))
-                .supply(Select.field(Label::getName), () -> faker.lorem().word() + faker.number().digits(DIGITS_COUNT))
-                .create();
-        labelRepository.save(label);
-
-        Task task = Instancio.of(Task.class)
-                .ignore(Select.field(Task::getId))
-                .ignore(Select.field(Task::getCreatedAt))
-                .ignore(Select.field(Task::getTaskLabels))
-                .supply(Select.field(Task::getName), () -> "Specific title")
-                .supply(Select.field(Task::getTaskStatus), () -> testStatus)
-                .supply(Select.field(Task::getAssignee), () -> testUser)
-                .create();
-        taskRepository.save(task);
-
-        task.setLabels(Set.of(label));
-        taskRepository.save(task);
+        Label label = this.testUtils.createLabel();
+        this.testUtils.createTask("Specific task", this.testUser, this.testStatus, Set.of(label));
 
         // Filter by title
-        MvcResult result1 = mockMvc.perform(get("/api/tasks?titleCont=Specific"))
+        MvcResult result1 = mockMvc.perform(get("/api/tasks?titleCont=Specific")
+                        .with(this.token))
                 .andExpect(status().isOk())
                 .andReturn();
         assertThatJson(result1.getResponse().getContentAsString()).isArray().hasSize(1);
 
         // Filter by assignee
-        MvcResult result2 = mockMvc.perform(get("/api/tasks?assigneeId=" + testUser.getId()))
+        MvcResult result2 = mockMvc.perform(get("/api/tasks?assigneeId=" + testUser.getId())
+                        .with(this.token))
                 .andExpect(status().isOk())
                 .andReturn();
         assertThatJson(result2.getResponse().getContentAsString()).isArray().hasSize(2);
 
         // Filter by status
-        MvcResult result3 = mockMvc.perform(get("/api/tasks?status=" + testStatus.getSlug()))
+        MvcResult result3 = mockMvc.perform(get("/api/tasks?status=" + testStatus.getSlug())
+                        .with(this.token))
                 .andExpect(status().isOk())
                 .andReturn();
         assertThatJson(result3.getResponse().getContentAsString()).isArray().hasSize(2);
 
         // Filter by label
-        MvcResult result4 = mockMvc.perform(get("/api/tasks?labelId=" + label.getId()))
+        MvcResult result4 = mockMvc.perform(get("/api/tasks?labelId=" + label.getId())
+                        .with(this.token))
                 .andExpect(status().isOk())
                 .andReturn();
         assertThatJson(result4.getResponse().getContentAsString()).isArray().hasSize(1);
 
         // Filter by multiple params
-        MvcResult result5 = mockMvc.perform(get("/api/tasks?titleCont=Specific&labelId=" + label.getId()))
+        MvcResult result5 = mockMvc.perform(get("/api/tasks?titleCont=Specific&labelId=" + label.getId())
+                        .with(this.token))
                 .andExpect(status().isOk())
                 .andReturn();
         assertThatJson(result5.getResponse().getContentAsString()).isArray().hasSize(1);
 
         // Filter by multiple params - no results
-        MvcResult result6 = mockMvc.perform(get("/api/tasks?titleCont=NonExistent&labelId=" + label.getId()))
+        MvcResult result6 = mockMvc.perform(get("/api/tasks?titleCont=NonExistent&labelId=" + label.getId())
+                        .with(this.token))
                 .andExpect(status().isOk())
                 .andReturn();
         assertThatJson(result6.getResponse().getContentAsString()).isArray().hasSize(0);
     }
 
     @Test
-    @WithMockUser
     public void testShow() throws Exception {
-        MvcResult result = this.mockMvc.perform(get("/api/tasks/{id}", this.testTask.getId()))
+        MvcResult result = this.mockMvc.perform(get("/api/tasks/{id}", this.testTask.getId())
+                        .with(this.token))
                 .andExpect(status().isOk())
                 .andReturn();
         String body = result.getResponse().getContentAsString();
@@ -186,7 +155,6 @@ public final class TaskControllerTest {
     }
 
     @Test
-    @WithMockUser
     public void testCreate() throws Exception {
         Map<String, Object> data = new HashMap<>();
         data.put("title", "New Task");
@@ -195,6 +163,7 @@ public final class TaskControllerTest {
         data.put("assignee_id", this.testUser.getId());
         data.put("index", TEST_INDEX);
         this.mockMvc.perform(post("/api/tasks")
+                        .with(this.token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(this.om.writeValueAsString(data)))
                 .andExpect(status().isCreated());
@@ -210,12 +179,12 @@ public final class TaskControllerTest {
     }
 
     @Test
-    @WithMockUser
     public void testUpdate() throws Exception {
         Map<String, Object> data = new HashMap<>();
         data.put("title", "Updated Task");
         data.put("content", "Updated Description");
         this.mockMvc.perform(put("/api/tasks/{id}", this.testTask.getId())
+                        .with(this.token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(this.om.writeValueAsString(data)))
                 .andExpect(status().isOk());
@@ -226,20 +195,13 @@ public final class TaskControllerTest {
     }
 
     @Test
-    @WithMockUser
     public void testPartialUpdateStatus() throws Exception {
-        TaskStatus newStatus = Instancio.of(TaskStatus.class)
-                .ignore(Select.field(TaskStatus::getId))
-                .supply(Select.field(TaskStatus::getName),
-                        () -> this.faker.lorem().word() + this.faker.number().digits(DIGITS_COUNT))
-                .supply(Select.field(TaskStatus::getSlug),
-                        () -> this.faker.internet().slug() + this.faker.number().digits(DIGITS_COUNT))
-                .create();
-        this.taskStatusRepository.save(newStatus);
+        TaskStatus newStatus = this.testUtils.createTaskStatus();
 
         Map<String, Object> data = Map.of("status", newStatus.getSlug());
 
         this.mockMvc.perform(put("/api/tasks/{id}", this.testTask.getId())
+                        .with(this.token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(this.om.writeValueAsString(data)))
                 .andExpect(status().isOk());
@@ -249,42 +211,36 @@ public final class TaskControllerTest {
     }
 
     @Test
-    @WithMockUser
     public void testDelete() throws Exception {
-        this.mockMvc.perform(delete("/api/tasks/{id}", this.testTask.getId()))
+        this.mockMvc.perform(delete("/api/tasks/{id}", this.testTask.getId())
+                        .with(this.token))
                 .andExpect(status().isNoContent());
 
         assertThat(this.taskRepository.existsById(this.testTask.getId())).isFalse();
     }
 
     @Test
-    @WithMockUser
     public void testDeleteUserWithTask() throws Exception {
-        this.mockMvc.perform(delete("/api/users/{id}", this.testUser.getId()))
-                .andExpect(status().isInternalServerError());
+        this.mockMvc.perform(delete("/api/users/{id}", this.testUser.getId())
+                        .with(this.token))
+                .andExpect(status().isConflict());
 
         assertThat(this.userRepository.existsById(this.testUser.getId())).isTrue();
     }
 
     @Test
-    @WithMockUser
     public void testDeleteStatusWithTask() throws Exception {
-        this.mockMvc.perform(delete("/api/task_statuses/{id}", this.testStatus.getId()))
-                .andExpect(status().isInternalServerError());
+        this.mockMvc.perform(delete("/api/task_statuses/{id}", this.testStatus.getId())
+                        .with(this.token))
+                .andExpect(status().isConflict());
 
         assertThat(this.taskStatusRepository.existsById(this.testStatus.getId())).isTrue();
     }
 
     @Test
-    @WithMockUser
     public void testCreateWithLabels() throws Exception {
-        Label label1 = new Label();
-        label1.setName("label1");
-        this.labelRepository.save(label1);
-
-        Label label2 = new Label();
-        label2.setName("label2");
-        this.labelRepository.save(label2);
+        Label label1 = this.testUtils.createLabel();
+        Label label2 = this.testUtils.createLabel();
 
         Map<String, Object> data = new HashMap<>();
         data.put("title", "Task with labels");
@@ -292,6 +248,7 @@ public final class TaskControllerTest {
         data.put("taskLabelIds", Set.of(label1.getId(), label2.getId()));
 
         this.mockMvc.perform(post("/api/tasks")
+                        .with(this.token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(this.om.writeValueAsString(data)))
                 .andExpect(status().isCreated());

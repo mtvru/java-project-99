@@ -4,13 +4,15 @@ import hexlet.code.dto.IndexDTO;
 import hexlet.code.dto.UserCreateDTO;
 import hexlet.code.dto.UserDTO;
 import hexlet.code.dto.UserUpdateDTO;
-import hexlet.code.service.UserService;
+import hexlet.code.service.CRUDService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,13 +28,10 @@ import java.net.URI;
 
 @RestController
 @RequestMapping("/api/users")
+@AllArgsConstructor
 @Tag(name = "Users", description = "Operations with users")
 public class UserController {
-    private final UserService userService;
-
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
+    private final CRUDService<UserDTO, IndexDTO, UserCreateDTO, UserUpdateDTO> userService;
 
     /**
      * Get all users.
@@ -96,6 +95,7 @@ public class UserController {
         @ApiResponse(responseCode = "404", description = "User not found")
     })
     @PutMapping("/{id}")
+    @PreAuthorize("@userUtils.isOwner(#id)")
     public ResponseEntity<UserDTO> update(@PathVariable @Parameter(description = "User ID") Long id,
                                           @RequestBody UserUpdateDTO dto) {
         UserDTO userDTO = this.userService.update(id, dto);
@@ -110,6 +110,7 @@ public class UserController {
     @Operation(summary = "Delete user")
     @ApiResponse(responseCode = "204", description = "User deleted")
     @DeleteMapping("/{id}")
+    @PreAuthorize("@userUtils.isOwner(#id)")
     public ResponseEntity<Void> destroy(@PathVariable @Parameter(description = "User ID") Long id) {
         this.userService.delete(id);
         return ResponseEntity.noContent().build();

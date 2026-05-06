@@ -4,12 +4,10 @@ import hexlet.code.dto.IndexDTO;
 import hexlet.code.dto.LabelCreateDTO;
 import hexlet.code.dto.LabelDTO;
 import hexlet.code.dto.LabelUpdateDTO;
-import hexlet.code.exception.EntityInUseException;
 import hexlet.code.exception.ResourceNotFoundException;
 import hexlet.code.mapper.LabelMapper;
 import hexlet.code.model.Label;
 import hexlet.code.repository.LabelRepository;
-import hexlet.code.repository.TaskRepository;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,11 +18,10 @@ import org.springframework.validation.annotation.Validated;
 @AllArgsConstructor
 @Service
 @Validated
-public class LabelService {
+public class LabelService implements CRUDService<LabelDTO, IndexDTO, LabelCreateDTO, LabelUpdateDTO> {
     private static final String LABEL_NOT_FOUND_MESSAGE = "Label with id %d not found";
 
     private final LabelRepository repository;
-    private final TaskRepository taskRepository;
     private final LabelMapper mapper;
 
     /**
@@ -78,17 +75,10 @@ public class LabelService {
 
     /**
      * Delete a label by identifier.
-     * Checks if the label is linked to tasks before deletion.
      * @param id label identifier
      * @throws ResourceNotFoundException if the label is not found
-     * @throws EntityInUseException if the label is linked to tasks
      */
     public void delete(Long id) {
-        Label label = this.repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format(LABEL_NOT_FOUND_MESSAGE, id)));
-        if (this.taskRepository.existsByTaskLabelsLabel(label)) {
-            throw new EntityInUseException("Cannot delete label linked to tasks");
-        }
         this.repository.deleteById(id);
     }
 }
