@@ -5,7 +5,7 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=mtvru_java-project-99&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=mtvru_java-project-99)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=mtvru_java-project-99&metric=coverage)](https://sonarcloud.io/summary/new_code?id=mtvru_java-project-99)
 
-Task Manager is a full-fledged web application built on the Spring Boot stack, designed to manage workflows in a team.
+Task Manager is a pet project from Hexlet. It just shows my skills in Java. But it can't be used in production.
 
 [Website](https://java-project-99-cfds.onrender.com)
 
