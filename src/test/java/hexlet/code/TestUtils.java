@@ -14,8 +14,6 @@ import org.instancio.Select;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import java.util.Set;
-
 @Component
 public class TestUtils {
     private static final int NAME_SUFFIX_LENGTH = 5;
@@ -93,8 +91,8 @@ public class TestUtils {
     public Label createLabel() {
         Label label = Instancio.of(Label.class)
                 .ignore(Select.field(Label::getId))
+                .ignore(Select.field(Label::getTasks))
                 .ignore(Select.field(Label::getCreatedAt))
-                .ignore(Select.field(Label::getTaskLabels))
                 .supply(Select.field(Label::getName), () -> this.faker.lorem().word()
                         + this.faker.number().digits(NAME_SUFFIX_LENGTH))
                 .create();
@@ -108,20 +106,20 @@ public class TestUtils {
      * @param name the name of the task
      * @param assignee the user to whom the task is assigned
      * @param status   the task status
-     * @param labels   a set of labels for the task
+     * @param label    for the task
      * @return the saved task
      */
-    public Task createTask(String name, User assignee, TaskStatus status, Set<Label> labels) {
+    public Task createTask(String name, User assignee, TaskStatus status, Label label) {
         Task task = Instancio.of(Task.class)
                 .ignore(Select.field(Task::getId))
+                .ignore(Select.field(Task::getLabels))
                 .ignore(Select.field(Task::getCreatedAt))
-                .ignore(Select.field(Task::getTaskLabels))
                 .supply(Select.field(Task::getName), () -> name)
                 .supply(Select.field(Task::getDescription), () -> this.faker.lorem().paragraph())
                 .supply(Select.field(Task::getTaskStatus), () -> status)
                 .supply(Select.field(Task::getAssignee), () -> assignee)
                 .create();
-        task.setLabels(labels);
+        task.addLabel(label);
         this.taskRepository.save(task);
         return task;
     }
@@ -131,11 +129,11 @@ public class TestUtils {
      *
      * @param assignee the user to whom the task is assigned
      * @param status the task status
-     * @param labels a set of labels for the task
+     * @param label  for the task
      * @return the saved task
      */
-    public Task createTask(User assignee, TaskStatus status, Set<Label> labels) {
-        return createTask(this.faker.country().name(), assignee, status, labels);
+    public Task createTask(User assignee, TaskStatus status, Label label) {
+        return createTask(this.faker.country().name(), assignee, status, label);
     }
 
     /**
@@ -148,7 +146,7 @@ public class TestUtils {
         TaskStatus status = createTaskStatus();
         Label label = createLabel();
         User user = createUser();
-        this.createTask(user, status, Set.of(label));
+        this.createTask(user, status, label);
         return label;
     }
 }

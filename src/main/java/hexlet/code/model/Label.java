@@ -5,21 +5,22 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Table;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.FetchType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.AccessLevel;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
-import java.util.Set;
 import java.util.HashSet;
+import java.util.Set;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
 
@@ -38,15 +39,13 @@ public class Label implements BaseEntity {
     @GeneratedValue(strategy = IDENTITY)
     @EqualsAndHashCode.Include
     private Long id;
-
+    @Setter(AccessLevel.NONE)
+    @ManyToMany(mappedBy = "labels", fetch = FetchType.LAZY)
+    private Set<Task> tasks = new HashSet<>();
     @NotBlank
     @Size(min = NAME_MIN_LENGTH, max = NAME_MAX_LENGTH)
     @Column(unique = true)
     private String name;
-
     @CreatedDate
     private LocalDate createdAt;
-
-    @OneToMany(mappedBy = "label", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    private Set<TaskLabel> taskLabels = new HashSet<>();
 }

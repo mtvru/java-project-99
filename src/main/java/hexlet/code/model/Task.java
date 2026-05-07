@@ -3,27 +3,26 @@ package hexlet.code.model;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Table;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.FetchType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.AccessLevel;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
 import java.util.Set;
 import java.util.HashSet;
-import java.util.stream.Collectors;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
 
@@ -39,6 +38,9 @@ public class Task implements BaseEntity {
     @GeneratedValue(strategy = IDENTITY)
     @EqualsAndHashCode.Include
     private Long id;
+    @Setter(AccessLevel.NONE)
+    @ManyToMany(fetch = FetchType.LAZY)
+    private Set<Label> labels = new HashSet<>();
     @NotBlank
     @Size(min = 1)
     private String name;
@@ -54,40 +56,21 @@ public class Task implements BaseEntity {
     @CreatedDate
     private LocalDate createdAt;
 
-    @OneToMany(mappedBy = "task", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true,
-            fetch = FetchType.EAGER)
-    private Set<TaskLabel> taskLabels = new HashSet<>();
-
     /**
-     * Get labels.
-     * @return set of labels
+     * Add a label to the task.
+     * @param label to add
      */
-    public final Set<Label> getLabels() {
-        return taskLabels.stream()
-                .map(TaskLabel::getLabel)
-                .collect(Collectors.toSet());
+    public void addLabel(Label label) {
+        this.labels.add(label);
+        label.getTasks().add(this);
     }
 
     /**
-     * Set labels.
-     * @param labels set of labels
+     * Remove a label from the task.
+     * @param label to remove
      */
-    public final void setLabels(Set<Label> labels) {
-        if (labels == null) {
-            this.taskLabels.clear();
-            return;
-        }
-
-        Set<Label> currentLabels = getLabels();
-
-        // Remove labels not in the new set
-        this.taskLabels.removeIf(taskLabel -> !labels.contains(taskLabel.getLabel()));
-
-        // Add new labels
-        labels.forEach(label -> {
-            if (!currentLabels.contains(label)) {
-                this.taskLabels.add(new TaskLabel(this, label));
-            }
-        });
+    public void removeTag(Label label) {
+        this.labels.remove(label);
+        label.getTasks().remove(this);
     }
 }

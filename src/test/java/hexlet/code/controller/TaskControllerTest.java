@@ -19,6 +19,7 @@ import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequ
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.nio.charset.StandardCharsets;
@@ -38,7 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public final class TaskControllerTest {
+public class TaskControllerTest {
     private static final int TEST_INDEX = 10;
 
     private final WebApplicationContext wac;
@@ -66,6 +67,9 @@ public final class TaskControllerTest {
         this.testUtils = testUtils;
     }
 
+    /**
+     * Creates a test user, task, and task status before each test.
+     */
     @BeforeEach
     public void setUp() {
         this.testUtils.clear();
@@ -76,7 +80,8 @@ public final class TaskControllerTest {
         this.testUser = this.testUtils.createUser();
         this.token = jwt().jwt(builder -> builder.subject(this.testUser.getEmail()));
         this.testStatus = this.testUtils.createTaskStatus();
-        this.testTask = this.testUtils.createTask(this.testUser, this.testStatus, Set.of());
+        Label label = this.testUtils.createLabel();
+        this.testTask = this.testUtils.createTask(this.testUser, this.testStatus, label);
     }
 
     @Test
@@ -93,7 +98,7 @@ public final class TaskControllerTest {
     @Test
     public void testIndexWithFilter() throws Exception {
         Label label = this.testUtils.createLabel();
-        this.testUtils.createTask("Specific task", this.testUser, this.testStatus, Set.of(label));
+        this.testUtils.createTask("Specific task", this.testUser, this.testStatus, label);
 
         // Filter by title
         MvcResult result1 = mockMvc.perform(get("/api/tasks?titleCont=Specific")
@@ -237,6 +242,7 @@ public final class TaskControllerTest {
         assertThat(this.taskStatusRepository.existsById(this.testStatus.getId())).isTrue();
     }
 
+    @Transactional
     @Test
     public void testCreateWithLabels() throws Exception {
         Label label1 = this.testUtils.createLabel();

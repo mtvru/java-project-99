@@ -52,7 +52,6 @@ public final class User implements UserDetails, BaseEntity {
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
