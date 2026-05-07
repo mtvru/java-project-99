@@ -1,6 +1,5 @@
 package hexlet.code.mapper;
 
-import hexlet.code.dto.IndexDTO;
 import hexlet.code.dto.TaskCreateDTO;
 import hexlet.code.dto.TaskDTO;
 import hexlet.code.dto.TaskUpdateDTO;
@@ -16,7 +15,6 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.ReportingPolicy;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Pageable;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -33,9 +31,6 @@ public abstract class TaskMapper {
     @Autowired
     private ReferenceMapper referenceMapper;
 
-    @Autowired
-    private QueryMapper queryMapper;
-
     @Mapping(target = "assignee", source = "assigneeId")
     @Mapping(target = "status", source = "taskStatus")
     @Mapping(target = "labels", source = "taskLabelIds")
@@ -51,10 +46,6 @@ public abstract class TaskMapper {
     @Mapping(target = "labels", source = "taskLabelIds")
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     public abstract void update(TaskUpdateDTO dto, @MappingTarget Task model);
-
-    public final Pageable map(IndexDTO dto) {
-        return queryMapper.toPageable(dto);
-    }
 
     protected final TaskStatus toTaskStatus(String slug) {
         return this.taskStatusRepository.findBySlug(slug)

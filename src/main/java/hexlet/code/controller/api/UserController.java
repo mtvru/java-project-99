@@ -1,6 +1,5 @@
 package hexlet.code.controller.api;
 
-import hexlet.code.dto.IndexDTO;
 import hexlet.code.dto.UserCreateDTO;
 import hexlet.code.dto.UserDTO;
 import hexlet.code.dto.UserUpdateDTO;
@@ -11,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -31,11 +31,10 @@ import java.net.URI;
 @AllArgsConstructor
 @Tag(name = "Users", description = "Operations with users")
 public class UserController {
-    private final CRUDService<UserDTO, IndexDTO, UserCreateDTO, UserUpdateDTO> userService;
+    private final CRUDService<UserDTO, UserCreateDTO, UserUpdateDTO> service;
 
     /**
      * Get all users.
-     * @param dto filter and pagination data
      * @return list of users
      */
     @Operation(summary = "Get list of all users")
@@ -43,8 +42,8 @@ public class UserController {
             headers = {@io.swagger.v3.oas.annotations.headers.Header(
                     name = "X-Total-Count", description = "Total number of users")})
     @GetMapping
-    public ResponseEntity<List<UserDTO>> index(IndexDTO dto) {
-        Page<UserDTO> usersPage = this.userService.findAll(dto);
+    public ResponseEntity<List<UserDTO>> index() {
+        Page<UserDTO> usersPage = this.service.findAll(Pageable.unpaged());
         return ResponseEntity.ok()
                 .header("X-Total-Count", String.valueOf(usersPage.getTotalElements()))
                 .body(usersPage.getContent());
@@ -59,7 +58,7 @@ public class UserController {
     @ApiResponse(responseCode = "201", description = "User created")
     @PostMapping
     public ResponseEntity<UserDTO> create(@RequestBody UserCreateDTO dto) {
-        UserDTO userDTO = this.userService.create(dto);
+        UserDTO userDTO = this.service.create(dto);
         URI location = ServletUriComponentsBuilder
             .fromCurrentRequest()
             .path("/{id}")
@@ -80,7 +79,7 @@ public class UserController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<UserDTO> show(@PathVariable @Parameter(description = "User ID") Long id) {
-        UserDTO userDTO = this.userService.findById(id);
+        UserDTO userDTO = this.service.findById(id);
         return ResponseEntity.ok(userDTO);
     }
 
@@ -98,7 +97,7 @@ public class UserController {
     @PreAuthorize("@userUtils.isOwner(#id)")
     public ResponseEntity<UserDTO> update(@PathVariable @Parameter(description = "User ID") Long id,
                                           @RequestBody UserUpdateDTO dto) {
-        UserDTO userDTO = this.userService.update(id, dto);
+        UserDTO userDTO = this.service.update(id, dto);
         return ResponseEntity.ok(userDTO);
     }
 
@@ -112,7 +111,7 @@ public class UserController {
     @DeleteMapping("/{id}")
     @PreAuthorize("@userUtils.isOwner(#id)")
     public ResponseEntity<Void> destroy(@PathVariable @Parameter(description = "User ID") Long id) {
-        this.userService.delete(id);
+        this.service.delete(id);
         return ResponseEntity.noContent().build();
     }
 }

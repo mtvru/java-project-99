@@ -1,6 +1,5 @@
 package hexlet.code.controller.api;
 
-import hexlet.code.dto.IndexDTO;
 import hexlet.code.dto.LabelCreateDTO;
 import hexlet.code.dto.LabelDTO;
 import hexlet.code.dto.LabelUpdateDTO;
@@ -11,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,11 +30,10 @@ import java.util.List;
 @AllArgsConstructor
 @Tag(name = "Labels", description = "Operations with labels")
 public class LabelController {
-    private final CRUDService<LabelDTO, IndexDTO, LabelCreateDTO, LabelUpdateDTO> service;
+    private final CRUDService<LabelDTO, LabelCreateDTO, LabelUpdateDTO> service;
 
     /**
      * Get a list of all labels.
-     * @param dto index data
      * @return list of label DTOs
      */
     @Operation(summary = "Get list of all labels")
@@ -42,8 +41,8 @@ public class LabelController {
             headers = {@io.swagger.v3.oas.annotations.headers.Header(
                     name = "X-Total-Count", description = "Total number of labels")})
     @GetMapping
-    public ResponseEntity<List<LabelDTO>> index(IndexDTO dto) {
-        Page<LabelDTO> labelsPage = this.service.findAll(dto);
+    public ResponseEntity<List<LabelDTO>> index() {
+        Page<LabelDTO> labelsPage = this.service.findAll(Pageable.unpaged());
         return ResponseEntity.ok()
                 .header("X-Total-Count", String.valueOf(labelsPage.getTotalElements()))
                 .body(labelsPage.getContent());

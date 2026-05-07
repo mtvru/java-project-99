@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Setter
 @Getter
-public class TaskParamsDTO extends IndexDTO {
+public class TaskParamsDTO {
     private String titleCont;
     private Long assigneeId;
     private String status;

@@ -49,7 +49,7 @@ public class Task implements BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
     @NotNull
-    @ManyToOne(optional = false)
+    @ManyToOne
     @JoinColumn(name = "status_id", nullable = false)
     private TaskStatus status;
     @ManyToOne

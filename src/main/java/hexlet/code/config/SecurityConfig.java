@@ -1,6 +1,6 @@
 package hexlet.code.config;
 
-import hexlet.code.service.UserService;
+import hexlet.code.service.BasicUserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -26,12 +26,12 @@ import java.util.Arrays;
 public class SecurityConfig {
     private final JwtDecoder jwtDecoder;
     private final PasswordEncoder passwordEncoder;
-    private final UserService userService;
+    private final BasicUserService basicUserService;
 
-    public SecurityConfig(JwtDecoder jwtDecoder, PasswordEncoder passwordEncoder, UserService userService) {
+    public SecurityConfig(JwtDecoder jwtDecoder, PasswordEncoder passwordEncoder, BasicUserService basicUserService) {
         this.jwtDecoder = jwtDecoder;
         this.passwordEncoder = passwordEncoder;
-        this.userService = userService;
+        this.basicUserService = basicUserService;
     }
 
     /**
@@ -91,7 +91,7 @@ public class SecurityConfig {
     @Bean
     public AuthenticationProvider daoAuthProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(this.userService);
+        provider.setUserDetailsService(this.basicUserService);
         provider.setPasswordEncoder(this.passwordEncoder);
         return provider;
     }

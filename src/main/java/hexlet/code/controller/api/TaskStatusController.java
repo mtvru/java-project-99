@@ -1,6 +1,5 @@
 package hexlet.code.controller.api;
 
-import hexlet.code.dto.IndexDTO;
 import hexlet.code.dto.TaskStatusCreateDTO;
 import hexlet.code.dto.TaskStatusDTO;
 import hexlet.code.dto.TaskStatusUpdateDTO;
@@ -11,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,11 +30,10 @@ import java.util.List;
 @AllArgsConstructor
 @Tag(name = "Task Statuses", description = "Operations with task statuses")
 public class TaskStatusController {
-    private final CRUDService<TaskStatusDTO, IndexDTO, TaskStatusCreateDTO, TaskStatusUpdateDTO> service;
+    private final CRUDService<TaskStatusDTO, TaskStatusCreateDTO, TaskStatusUpdateDTO> service;
 
     /**
      * Get a list of all task statuses.
-     * @param dto index data
      * @return response with a list of statuses
      */
     @Operation(summary = "Get list of all task statuses")
@@ -42,8 +41,8 @@ public class TaskStatusController {
             headers = {@io.swagger.v3.oas.annotations.headers.Header(
                     name = "X-Total-Count", description = "Total number of task statuses")})
     @GetMapping
-    public ResponseEntity<List<TaskStatusDTO>> index(IndexDTO dto) {
-        Page<TaskStatusDTO> statusesPage = this.service.findAll(dto);
+    public ResponseEntity<List<TaskStatusDTO>> index() {
+        Page<TaskStatusDTO> statusesPage = this.service.findAll(Pageable.unpaged());
         return ResponseEntity.ok()
                 .header("X-Total-Count", String.valueOf(statusesPage.getTotalElements()))
                 .body(statusesPage.getContent());

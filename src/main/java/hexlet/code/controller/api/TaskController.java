@@ -4,13 +4,14 @@ import hexlet.code.dto.TaskCreateDTO;
 import hexlet.code.dto.TaskDTO;
 import hexlet.code.dto.TaskParamsDTO;
 import hexlet.code.dto.TaskUpdateDTO;
-import hexlet.code.service.CRUDService;
+import hexlet.code.service.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,7 +31,7 @@ import java.util.List;
 @AllArgsConstructor
 @Tag(name = "Tasks", description = "Operations with tasks")
 public class TaskController {
-    private final CRUDService<TaskDTO, TaskParamsDTO, TaskCreateDTO, TaskUpdateDTO> service;
+    private final TaskService service;
 
     /**
      * Get a list of all tasks.
@@ -43,7 +44,7 @@ public class TaskController {
                     name = "X-Total-Count", description = "Total number of tasks")})
     @GetMapping
     public ResponseEntity<List<TaskDTO>> index(TaskParamsDTO params) {
-        Page<TaskDTO> tasksPage = this.service.findAll(params);
+        Page<TaskDTO> tasksPage = this.service.findAll(params, Pageable.unpaged());
         return ResponseEntity.ok()
                 .header("X-Total-Count", String.valueOf(tasksPage.getTotalElements()))
                 .body(tasksPage.getContent());
