@@ -176,7 +176,7 @@ public final class TaskStatusControllerTest {
     public void testDeleteWithTask() throws Exception {
         Task task = new Task();
         task.setName("task");
-        task.setTaskStatus(this.testStatus);
+        task.setStatus(this.testStatus);
         this.taskRepository.save(task);
 
         this.mockMvc.perform(delete("/api/task_statuses/{id}", this.testStatus.getId())

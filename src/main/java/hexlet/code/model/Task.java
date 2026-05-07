@@ -11,6 +11,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.FetchType;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -47,9 +48,10 @@ public class Task implements BaseEntity {
     private Integer index;
     @Column(columnDefinition = "TEXT")
     private String description;
+    @NotNull
     @ManyToOne(optional = false)
-    @JoinColumn(name = "status_id")
-    private TaskStatus taskStatus;
+    @JoinColumn(name = "status_id", nullable = false)
+    private TaskStatus status;
     @ManyToOne
     @JoinColumn(name = "assignee_id")
     private User assignee;

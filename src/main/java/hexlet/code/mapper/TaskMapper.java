@@ -37,17 +37,17 @@ public abstract class TaskMapper {
     private QueryMapper queryMapper;
 
     @Mapping(target = "assignee", source = "assigneeId")
-    @Mapping(target = "taskStatus", source = "taskStatus")
+    @Mapping(target = "status", source = "taskStatus")
     @Mapping(target = "labels", source = "taskLabelIds")
     public abstract Task map(TaskCreateDTO dto);
 
     @Mapping(target = "assigneeId", source = "assignee.id")
-    @Mapping(target = "taskStatus", source = "taskStatus.slug")
+    @Mapping(target = "taskStatus", source = "status.slug")
     @Mapping(target = "taskLabelIds", source = "labels")
     public abstract TaskDTO map(Task model);
 
     @Mapping(target = "assignee", source = "assigneeId")
-    @Mapping(target = "taskStatus", source = "taskStatus")
+    @Mapping(target = "status", source = "taskStatus")
     @Mapping(target = "labels", source = "taskLabelIds")
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     public abstract void update(TaskUpdateDTO dto, @MappingTarget Task model);

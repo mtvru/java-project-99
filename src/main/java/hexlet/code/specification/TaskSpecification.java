@@ -29,7 +29,7 @@ public final class TaskSpecification {
     private Specification<Task> withStatus(String status) {
         return (root, query, cb) -> status == null
                 ? cb.conjunction()
-                : cb.equal(root.get("taskStatus").get("slug"), status);
+                : cb.equal(root.get("status").get("slug"), status);
     }
 
     private Specification<Task> withLabelId(Long labelId) {

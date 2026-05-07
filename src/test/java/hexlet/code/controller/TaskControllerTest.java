@@ -178,7 +178,7 @@ public class TaskControllerTest {
                 .findFirst()
                 .get();
         assertThat(task.getDescription()).isEqualTo("New Description");
-        assertThat(task.getTaskStatus().getSlug()).isEqualTo(this.testStatus.getSlug());
+        assertThat(task.getStatus().getSlug()).isEqualTo(this.testStatus.getSlug());
         assertThat(task.getAssignee().getId()).isEqualTo(this.testUser.getId());
         assertThat(task.getIndex()).isEqualTo(TEST_INDEX);
     }
@@ -196,7 +196,7 @@ public class TaskControllerTest {
         Task task = this.taskRepository.findById(this.testTask.getId()).get();
         assertThat(task.getName()).isEqualTo("Updated Task");
         assertThat(task.getDescription()).isEqualTo("Updated Description");
-        assertThat(task.getTaskStatus().getSlug()).isEqualTo(this.testStatus.getSlug());
+        assertThat(task.getStatus().getSlug()).isEqualTo(this.testStatus.getSlug());
     }
 
     @Test
@@ -212,7 +212,7 @@ public class TaskControllerTest {
                 .andExpect(status().isOk());
 
         Task task = this.taskRepository.findById(this.testTask.getId()).get();
-        assertThat(task.getTaskStatus().getSlug()).isEqualTo(newStatus.getSlug());
+        assertThat(task.getStatus().getSlug()).isEqualTo(newStatus.getSlug());
     }
 
     @Test

@@ -116,7 +116,7 @@ public class TestUtils {
                 .ignore(Select.field(Task::getCreatedAt))
                 .supply(Select.field(Task::getName), () -> name)
                 .supply(Select.field(Task::getDescription), () -> this.faker.lorem().paragraph())
-                .supply(Select.field(Task::getTaskStatus), () -> status)
+                .supply(Select.field(Task::getStatus), () -> status)
                 .supply(Select.field(Task::getAssignee), () -> assignee)
                 .create();
         task.addLabel(label);
