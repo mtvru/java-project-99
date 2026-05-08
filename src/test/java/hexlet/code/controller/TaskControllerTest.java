@@ -1,7 +1,11 @@
 package hexlet.code.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import hexlet.code.TestUtils;
+import hexlet.code.TestModelFactory;
+import hexlet.code.TestPersistenceManager;
+import hexlet.code.dto.TaskDTO;
+import hexlet.code.mapper.TaskMapper;
 import hexlet.code.model.Label;
 import hexlet.code.model.Task;
 import hexlet.code.model.TaskStatus;
@@ -11,6 +15,9 @@ import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,13 +26,15 @@ import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequ
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.nio.charset.StandardCharsets;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,49 +48,54 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class TaskControllerTest {
+public final class TaskControllerTest extends AbstractControllerTest {
     private static final int TEST_INDEX = 10;
+    private static final String TASK_NAME_SPECIFIC = "Specific";
 
-    private final WebApplicationContext wac;
-    private final TaskRepository taskRepository;
-    private final TaskStatusRepository taskStatusRepository;
-    private final UserRepository userRepository;
-    private final ObjectMapper om;
-    private final TestUtils testUtils;
+    @Autowired
+    private WebApplicationContext wac;
+    @Autowired
+    private TaskRepository taskRepository;
+    @Autowired
+    private TaskStatusRepository taskStatusRepository;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private ObjectMapper om;
+    @Autowired
+    private TestPersistenceManager testPersistenceManager;
+    @Autowired
+    private TestModelFactory testModelFactory;
+    @Autowired
+    private TaskMapper mapper;
     private MockMvc mockMvc;
     private JwtRequestPostProcessor token;
     private Task testTask;
     private User testUser;
     private TaskStatus testStatus;
+    private Label testLabel;
 
-    @Autowired
-    public TaskControllerTest(
-        WebApplicationContext wac, TaskRepository taskRepository, TaskStatusRepository taskStatusRepository,
-        UserRepository userRepository, ObjectMapper om, TestUtils testUtils
-    ) {
-        this.wac = wac;
-        this.taskRepository = taskRepository;
-        this.taskStatusRepository = taskStatusRepository;
-        this.userRepository = userRepository;
-        this.om = om;
-        this.testUtils = testUtils;
-    }
-
-    /**
-     * Creates a test user, task, and task status before each test.
-     */
     @BeforeEach
     public void setUp() {
-        this.testUtils.clear();
+        this.testPersistenceManager.clear();
         this.mockMvc = MockMvcBuilders.webAppContextSetup(wac)
                 .defaultResponseCharacterEncoding(StandardCharsets.UTF_8)
                 .apply(springSecurity())
                 .build();
-        this.testUser = this.testUtils.createUser();
+        this.testUser = this.testModelFactory.createUser();
+        this.testUser = this.testPersistenceManager.save(this.testUser);
         this.token = jwt().jwt(builder -> builder.subject(this.testUser.getEmail()));
-        this.testStatus = this.testUtils.createTaskStatus();
-        Label label = this.testUtils.createLabel();
-        this.testTask = this.testUtils.createTask(this.testUser, this.testStatus, label);
+        this.testStatus = this.testModelFactory.createTaskStatus();
+        this.testStatus = this.testPersistenceManager.save(this.testStatus);
+        this.testLabel = this.testModelFactory.createLabel();
+        this.testLabel = this.testPersistenceManager.save(this.testLabel);
+        this.testTask = this.testModelFactory.createTask(this.testUser, this.testStatus, this.testLabel);
+        this.testTask = this.testPersistenceManager.save(this.testTask);
+
+        Task task = this.testModelFactory.createTask(
+                TASK_NAME_SPECIFIC + " task", this.testUser, this.testStatus, this.testLabel
+        );
+        this.testPersistenceManager.save(task);
     }
 
     @Test
@@ -91,56 +105,39 @@ public class TaskControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
         String body = result.getResponse().getContentAsString();
-        assertThatJson(body).isArray().hasSize(1);
-        assertThatJson(body).node("[0].createdAt").asString().matches("^\\d{4}-\\d{2}-\\d{2}$");
+        List<TaskDTO> dtos = this.om.readValue(body, new TypeReference<>() { });
+        List<Task> actual = dtos.stream().map(this.mapper::map).toList();
+        List<Task> expected = this.taskRepository.findAll();
+        assertThat(actual).containsExactlyInAnyOrderElementsOf(expected);
+        assertThat(actual.getFirst().getCreatedAt().format(DateTimeFormatter.ofPattern(TaskDTO.ISO_DATE_FORMAT)))
+            .isEqualTo(
+                    expected.getFirst().getCreatedAt().format(DateTimeFormatter.ofPattern(TaskDTO.ISO_DATE_FORMAT))
+            );
     }
 
-    @Test
-    public void testIndexWithFilter() throws Exception {
-        Label label = this.testUtils.createLabel();
-        this.testUtils.createTask("Specific task", this.testUser, this.testStatus, label);
+    @ParameterizedTest
+    @MethodSource("filterParams")
+    public void testIndexWithFilter(String query, int size) throws Exception {
+        String queryString = query.replace("{assigneeId}", String.valueOf(testUser.getId()))
+                .replace("{status}", testStatus.getSlug())
+                .replace("{labelId}", String.valueOf(testLabel.getId()));
 
-        // Filter by title
-        MvcResult result1 = mockMvc.perform(get("/api/tasks?titleCont=Specific")
+        MvcResult result = mockMvc.perform(get("/api/tasks?" + queryString)
                         .with(this.token))
                 .andExpect(status().isOk())
                 .andReturn();
-        assertThatJson(result1.getResponse().getContentAsString()).isArray().hasSize(1);
+        assertThatJson(result.getResponse().getContentAsString()).isArray().hasSize(size);
+    }
 
-        // Filter by assignee
-        MvcResult result2 = mockMvc.perform(get("/api/tasks?assigneeId=" + testUser.getId())
-                        .with(this.token))
-                .andExpect(status().isOk())
-                .andReturn();
-        assertThatJson(result2.getResponse().getContentAsString()).isArray().hasSize(2);
-
-        // Filter by status
-        MvcResult result3 = mockMvc.perform(get("/api/tasks?status=" + testStatus.getSlug())
-                        .with(this.token))
-                .andExpect(status().isOk())
-                .andReturn();
-        assertThatJson(result3.getResponse().getContentAsString()).isArray().hasSize(2);
-
-        // Filter by label
-        MvcResult result4 = mockMvc.perform(get("/api/tasks?labelId=" + label.getId())
-                        .with(this.token))
-                .andExpect(status().isOk())
-                .andReturn();
-        assertThatJson(result4.getResponse().getContentAsString()).isArray().hasSize(1);
-
-        // Filter by multiple params
-        MvcResult result5 = mockMvc.perform(get("/api/tasks?titleCont=Specific&labelId=" + label.getId())
-                        .with(this.token))
-                .andExpect(status().isOk())
-                .andReturn();
-        assertThatJson(result5.getResponse().getContentAsString()).isArray().hasSize(1);
-
-        // Filter by multiple params - no results
-        MvcResult result6 = mockMvc.perform(get("/api/tasks?titleCont=NonExistent&labelId=" + label.getId())
-                        .with(this.token))
-                .andExpect(status().isOk())
-                .andReturn();
-        assertThatJson(result6.getResponse().getContentAsString()).isArray().hasSize(0);
+    private static Stream<Arguments> filterParams() {
+        return Stream.of(
+                Arguments.of("titleCont=" + TASK_NAME_SPECIFIC, 1),
+                Arguments.of("assigneeId={assigneeId}", 2),
+                Arguments.of("status={status}", 2),
+                Arguments.of("labelId={labelId}", 2),
+                Arguments.of("titleCont=" + TASK_NAME_SPECIFIC + "&labelId={labelId}", 1),
+                Arguments.of("titleCont=NonExistent&labelId={labelId}", 0)
+        );
     }
 
     @Test
@@ -155,7 +152,9 @@ public class TaskControllerTest {
                 v -> v.node("content").isEqualTo(this.testTask.getDescription()),
                 v -> v.node("status").isEqualTo(this.testStatus.getSlug()),
                 v -> v.node("assignee_id").isEqualTo(this.testUser.getId()),
-                v -> v.node("createdAt").asString().matches("^\\d{4}-\\d{2}-\\d{2}$")
+                v -> v.node("createdAt").isEqualTo(
+                        this.testTask.getCreatedAt().format(DateTimeFormatter.ofPattern(TaskDTO.ISO_DATE_FORMAT))
+                )
         );
     }
 
@@ -173,10 +172,7 @@ public class TaskControllerTest {
                         .content(this.om.writeValueAsString(data)))
                 .andExpect(status().isCreated());
 
-        Task task = this.taskRepository.findAll().stream()
-                .filter(t -> t.getName().equals("New Task"))
-                .findFirst()
-                .get();
+        Task task = this.taskRepository.findByName("New Task").get();
         assertThat(task.getDescription()).isEqualTo("New Description");
         assertThat(task.getStatus().getSlug()).isEqualTo(this.testStatus.getSlug());
         assertThat(task.getAssignee().getId()).isEqualTo(this.testUser.getId());
@@ -201,7 +197,8 @@ public class TaskControllerTest {
 
     @Test
     public void testPartialUpdateStatus() throws Exception {
-        TaskStatus newStatus = this.testUtils.createTaskStatus();
+        TaskStatus newStatus = this.testModelFactory.createTaskStatus();
+        newStatus = this.testPersistenceManager.save(newStatus);
 
         Map<String, Object> data = Map.of("status", newStatus.getSlug());
 
@@ -242,11 +239,12 @@ public class TaskControllerTest {
         assertThat(this.taskStatusRepository.existsById(this.testStatus.getId())).isTrue();
     }
 
-    @Transactional
     @Test
     public void testCreateWithLabels() throws Exception {
-        Label label1 = this.testUtils.createLabel();
-        Label label2 = this.testUtils.createLabel();
+        Label label1 = this.testModelFactory.createLabel();
+        Label label2 = this.testModelFactory.createLabel();
+        label1 = this.testPersistenceManager.save(label1);
+        label2 = this.testPersistenceManager.save(label2);
 
         Map<String, Object> data = new HashMap<>();
         data.put("title", "Task with labels");
@@ -259,10 +257,7 @@ public class TaskControllerTest {
                         .content(this.om.writeValueAsString(data)))
                 .andExpect(status().isCreated());
 
-        Task task = this.taskRepository.findAll().stream()
-                .filter(t -> t.getName().equals("Task with labels"))
-                .findFirst()
-                .get();
+        Task task = this.taskRepository.findByName("Task with labels").get();
 
         assertThat(task.getLabels()).hasSize(2);
         assertThat(task.getLabels()).extracting(Label::getId).containsExactlyInAnyOrder(label1.getId(), label2.getId());

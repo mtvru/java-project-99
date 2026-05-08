@@ -1,7 +1,12 @@
 package hexlet.code.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import hexlet.code.TestUtils;
+import hexlet.code.TestModelFactory;
+import hexlet.code.TestPersistenceManager;
+import hexlet.code.dto.TaskDTO;
+import hexlet.code.dto.TaskStatusDTO;
+import hexlet.code.mapper.TaskStatusMapper;
 import hexlet.code.model.Task;
 import hexlet.code.model.TaskStatus;
 import hexlet.code.model.User;
@@ -20,6 +25,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.nio.charset.StandardCharsets;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
@@ -34,12 +41,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public final class TaskStatusControllerTest {
+public final class TaskStatusControllerTest extends AbstractControllerTest {
     private final WebApplicationContext wac;
     private final TaskStatusRepository taskStatusRepository;
     private final TaskRepository taskRepository;
-    private final TestUtils testUtils;
+    private final TestPersistenceManager testPersistenceManager;
+    private final TestModelFactory testModelFactory;
     private final ObjectMapper om;
+    private final TaskStatusMapper mapper;
     private MockMvc mockMvc;
     private JwtRequestPostProcessor token;
     private TaskStatus testStatus;
@@ -48,25 +57,30 @@ public final class TaskStatusControllerTest {
     @Autowired
     public TaskStatusControllerTest(
             WebApplicationContext wac, TaskStatusRepository taskStatusRepository,
-            TaskRepository taskRepository, ObjectMapper om, TestUtils testUtils
+            TaskRepository taskRepository, ObjectMapper om, TestPersistenceManager testPersistenceManager,
+            TestModelFactory testModelFactory, TaskStatusMapper mapper
     ) {
         this.wac = wac;
         this.taskStatusRepository = taskStatusRepository;
         this.taskRepository = taskRepository;
         this.om = om;
-        this.testUtils = testUtils;
+        this.testPersistenceManager = testPersistenceManager;
+        this.testModelFactory = testModelFactory;
+        this.mapper = mapper;
     }
 
     @BeforeEach
     public void setUp() {
-        this.testUtils.clear();
+        this.testPersistenceManager.clear();
         this.mockMvc = MockMvcBuilders.webAppContextSetup(wac)
                 .defaultResponseCharacterEncoding(StandardCharsets.UTF_8)
                 .apply(springSecurity())
                 .build();
-        this.testUser = testUtils.createUser();
+        this.testUser = this.testModelFactory.createUser();
+        this.testUser = this.testPersistenceManager.save(this.testUser);
         this.token = jwt().jwt(builder -> builder.subject(this.testUser.getEmail()));
-        this.testStatus = testUtils.createTaskStatus();
+        this.testStatus = this.testModelFactory.createTaskStatus();
+        this.testStatus = this.testPersistenceManager.save(this.testStatus);
     }
 
     @Test
@@ -75,8 +89,14 @@ public final class TaskStatusControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
         String body = result.getResponse().getContentAsString();
-        assertThatJson(body).isArray().hasSize(1);
-        assertThatJson(body).node("[0].createdAt").asString().matches("^\\d{4}-\\d{2}-\\d{2}$");
+        List<TaskStatusDTO> dtos = this.om.readValue(body, new TypeReference<>() { });
+        List<TaskStatus> actual = dtos.stream().map(this.mapper::map).toList();
+        List<TaskStatus> expected = this.taskStatusRepository.findAll();
+        assertThat(actual).containsExactlyInAnyOrderElementsOf(expected);
+        assertThat(actual.getFirst().getCreatedAt().format(DateTimeFormatter.ofPattern(TaskDTO.ISO_DATE_FORMAT)))
+            .isEqualTo(
+                    expected.getFirst().getCreatedAt().format(DateTimeFormatter.ofPattern(TaskDTO.ISO_DATE_FORMAT))
+            );
     }
 
     @Test
@@ -88,7 +108,9 @@ public final class TaskStatusControllerTest {
         assertThatJson(body).and(
                 v -> v.node("name").isEqualTo(this.testStatus.getName()),
                 v -> v.node("slug").isEqualTo(this.testStatus.getSlug()),
-                v -> v.node("createdAt").asString().matches("^\\d{4}-\\d{2}-\\d{2}$")
+                v -> v.node("createdAt").isEqualTo(
+                        this.testStatus.getCreatedAt().format(DateTimeFormatter.ofPattern(TaskDTO.ISO_DATE_FORMAT))
+                )
         );
     }
 

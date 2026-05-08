@@ -1,8 +1,15 @@
 package hexlet.code.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import hexlet.code.TestUtils;
+import hexlet.code.TestModelFactory;
+import hexlet.code.TestPersistenceManager;
+import hexlet.code.dto.LabelDTO;
+import hexlet.code.dto.TaskDTO;
+import hexlet.code.mapper.LabelMapper;
 import hexlet.code.model.Label;
+import hexlet.code.model.Task;
+import hexlet.code.model.TaskStatus;
 import hexlet.code.model.User;
 import hexlet.code.repository.LabelRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +25,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.nio.charset.StandardCharsets;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
@@ -32,11 +41,13 @@ import static org.springframework.security.test.web.servlet.setup.SecurityMockMv
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public final class LabelControllerTest {
+public final class LabelControllerTest extends AbstractControllerTest {
     private final WebApplicationContext wac;
     private final LabelRepository labelRepository;
     private final ObjectMapper om;
-    private final TestUtils testUtils;
+    private final TestPersistenceManager testPersistenceManager;
+    private final TestModelFactory testModelFactory;
+    private final LabelMapper mapper;
     private MockMvc mockMvc;
     private JwtRequestPostProcessor token;
     private Label testLabel;
@@ -45,36 +56,45 @@ public final class LabelControllerTest {
     @Autowired
     public LabelControllerTest(
             WebApplicationContext wac, LabelRepository labelRepository, ObjectMapper om,
-            TestUtils testUtils
+            TestPersistenceManager testPersistenceManager, LabelMapper labelMapper, TestModelFactory testModelFactory
     ) {
         this.wac = wac;
         this.labelRepository = labelRepository;
         this.om = om;
-        this.testUtils = testUtils;
+        this.testPersistenceManager = testPersistenceManager;
+        this.mapper = labelMapper;
+        this.testModelFactory = testModelFactory;
     }
 
     @BeforeEach
     public void setUp() {
-        this.testUtils.clear();
+        this.testPersistenceManager.clear();
         this.mockMvc = MockMvcBuilders.webAppContextSetup(wac)
                 .defaultResponseCharacterEncoding(StandardCharsets.UTF_8)
                 .apply(springSecurity())
                 .build();
-        this.testUser = this.testUtils.createUser();
+        this.testUser = this.testModelFactory.createUser();
+        this.testUser = this.testPersistenceManager.save(this.testUser);
         this.token = jwt().jwt(builder -> builder.subject(this.testUser.getEmail()));
-        this.testLabel = this.testUtils.createLabel();
+        this.testLabel = this.testModelFactory.createLabel();
+        this.testLabel = this.testPersistenceManager.save(this.testLabel);
     }
 
     @Test
     public void testIndex() throws Exception {
         MvcResult result = this.mockMvc.perform(get("/api/labels")
-                        .with(this.token))
+                .with(this.token))
                 .andExpect(status().isOk())
                 .andReturn();
         String body = result.getResponse().getContentAsString();
-        assertThatJson(body).isArray().hasSize(1);
-        //TODO check body
-        assertThatJson(body).node("[0].createdAt").asString().matches("^\\d{4}-\\d{2}-\\d{2}$");
+        List<LabelDTO> labelsDto = om.readValue(body, new TypeReference<>() { });
+        List<Label> actual = labelsDto.stream().map(this.mapper::map).toList();
+        List<Label> expected = this.labelRepository.findAll();
+        assertThat(actual).containsExactlyInAnyOrderElementsOf(expected);
+        assertThat(actual.getFirst().getCreatedAt().format(DateTimeFormatter.ofPattern(TaskDTO.ISO_DATE_FORMAT)))
+            .isEqualTo(
+                    expected.getFirst().getCreatedAt().format(DateTimeFormatter.ofPattern(TaskDTO.ISO_DATE_FORMAT))
+            );
     }
 
     @Test
@@ -86,7 +106,9 @@ public final class LabelControllerTest {
         String body = result.getResponse().getContentAsString();
         assertThatJson(body).and(
                 v -> v.node("name").isEqualTo(this.testLabel.getName()),
-                v -> v.node("createdAt").asString().matches("^\\d{4}-\\d{2}-\\d{2}$")
+                v -> v.node("createdAt").isEqualTo(
+                        this.testLabel.getCreatedAt().format(DateTimeFormatter.ofPattern(TaskDTO.ISO_DATE_FORMAT))
+                )
         );
     }
 
@@ -120,7 +142,8 @@ public final class LabelControllerTest {
 
     @Test
     public void testDelete() throws Exception {
-        Label label = this.testUtils.createLabel();
+        Label label = this.testModelFactory.createLabel();
+        label = this.testPersistenceManager.save(label);
         this.mockMvc.perform(delete("/api/labels/{id}", label.getId())
                         .with(this.token))
                 .andExpect(status().isNoContent());
@@ -130,7 +153,14 @@ public final class LabelControllerTest {
 
     @Test
     public void testDeleteWithTask() throws Exception {
-        Label label = this.testUtils.createLabelWithUserAndTaskAndTaskStatus();
+        User user = this.testModelFactory.createUser();
+        user = this.testPersistenceManager.save(user);
+        TaskStatus taskStatus = this.testModelFactory.createTaskStatus();
+        taskStatus = this.testPersistenceManager.save(taskStatus);
+        Label label = this.testModelFactory.createLabel();
+        label = this.testPersistenceManager.save(label);
+        Task task = this.testModelFactory.createTask(user, taskStatus, label);
+        this.testPersistenceManager.save(task);
         this.mockMvc.perform(delete("/api/labels/{id}", label.getId())
                         .with(this.token))
                 .andExpect(status().isConflict());

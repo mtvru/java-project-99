@@ -12,13 +12,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import hexlet.code.TestUtils;
+import hexlet.code.TestModelFactory;
+import hexlet.code.TestPersistenceManager;
+import hexlet.code.dto.UserDTO;
+import hexlet.code.mapper.UserMapper;
 import hexlet.code.model.User;
 import hexlet.code.repository.UserRepository;
 import net.datafaker.Faker;
-import org.instancio.Instancio;
-import org.instancio.Select;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,41 +35,49 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.nio.charset.StandardCharsets;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public final class UserControllerTest {
+public final class UserControllerTest extends AbstractControllerTest {
     private final WebApplicationContext wac;
     private final Faker faker;
     private final UserRepository userRepository;
-    private final TestUtils testUtils;
+    private final TestPersistenceManager testPersistenceManager;
+    private final TestModelFactory testModelFactory;
     private final ObjectMapper om;
+    private final UserMapper mapper;
     private MockMvc mockMvc;
     private JwtRequestPostProcessor token;
     private User testUser;
 
     @Autowired
     public UserControllerTest(
-        WebApplicationContext wac, Faker faker, UserRepository userRepository,
-        TestUtils testUtils, ObjectMapper om
+            WebApplicationContext wac, Faker faker, UserRepository userRepository,
+            TestPersistenceManager testPersistenceManager, TestModelFactory testModelFactory, ObjectMapper om,
+            UserMapper mapper
     ) {
         this.wac = wac;
         this.faker = faker;
         this.userRepository = userRepository;
-        this.testUtils = testUtils;
+        this.testPersistenceManager = testPersistenceManager;
+        this.testModelFactory = testModelFactory;
         this.om = om;
+        this.mapper = mapper;
     }
 
     @BeforeEach
     public void setUp() {
-        this.testUtils.clear();
+        this.testPersistenceManager.clear();
         this.mockMvc = MockMvcBuilders.webAppContextSetup(wac)
                 .defaultResponseCharacterEncoding(StandardCharsets.UTF_8)
                 .apply(springSecurity())
                 .build();
-        this.testUser = testUtils.createUser();
+        this.testUser = testModelFactory.createUser();
+        this.testUser = this.testPersistenceManager.save(this.testUser);
         this.token = jwt().jwt(builder -> builder.subject(this.testUser.getEmail()));
     }
 
@@ -80,8 +90,13 @@ public final class UserControllerTest {
             .andExpect(jsonPath("$").isArray())
             .andReturn();
         String body = result.getResponse().getContentAsString();
-        assertThatJson(body).isArray().hasSize(1);
-        assertThatJson(body).node("[0].createdAt").asString().matches("^\\d{4}-\\d{2}-\\d{2}$");
+        List<UserDTO> dtos = this.om.readValue(body, new TypeReference<>() { });
+        List<User> actual = dtos.stream().map(this.mapper::map).toList();
+        List<User> expected = this.userRepository.findAll();
+        assertThat(actual).containsExactlyInAnyOrderElementsOf(expected);
+        assertThat(actual.getFirst().getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))).isEqualTo(
+                expected.getFirst().getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        );
     }
 
     @Test
@@ -93,17 +108,16 @@ public final class UserControllerTest {
         String body = result.getResponse().getContentAsString();
         assertThatJson(body).and(
             v -> v.node("email").isEqualTo(this.testUser.getEmail()),
-            v -> v.node("createdAt").asString().matches("^\\d{4}-\\d{2}-\\d{2}$")
+            v -> v.node("createdAt").isEqualTo(
+                        this.testUser.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                )
         );
     }
 
     @Test
     public void testCreate() throws Exception {
         final String email = "john@example.com";
-        User user = Instancio.of(User.class)
-            .supply(Select.field(User::getEmail), () -> email)
-            .supply(Select.field(User::getPassword), () -> this.faker.credentials().password())
-            .create();
+        User user = this.testModelFactory.createUser(email, this.faker.credentials().password());
         Map<String, String> data = new HashMap<>();
         data.put("email", user.getEmail());
         data.put("password", "password");
@@ -142,7 +156,9 @@ public final class UserControllerTest {
 
     @Test
     public void testUpdateAnotherAuthorizedUserFail() throws Exception {
-        User anotherUser = this.testUtils.createUser();
+        User anotherUser = this.testModelFactory.createUser();
+        anotherUser = this.testPersistenceManager.save(anotherUser);
+        User finalAnotherUser = anotherUser;
         final String oldFirstName = this.testUser.getFirstName();
 
         HashMap<String, String> data = new HashMap<>();
@@ -150,13 +166,11 @@ public final class UserControllerTest {
         data.put("firstName", firstName);
 
         MockHttpServletRequestBuilder request = put("/api/users/{id}", this.testUser.getId())
-            .with(jwt().jwt(builder -> builder.subject(anotherUser.getEmail())))
+            .with(jwt().jwt(builder -> builder.subject(finalAnotherUser.getEmail())))
             .contentType(MediaType.APPLICATION_JSON)
             .content(this.om.writeValueAsString(data));
-
         this.mockMvc.perform(request)
             .andExpect(status().isForbidden());
-
         User notUpdatedUser = this.userRepository.findById(this.testUser.getId()).get();
         assertThat(notUpdatedUser.getFirstName()).isEqualTo(oldFirstName);
     }
@@ -174,18 +188,18 @@ public final class UserControllerTest {
 
     @Test
     public void testDeleteAnotherAuthorizedUserFail() throws Exception {
-        User anotherUser = this.testUtils.createUser();
+        User anotherUser = this.testModelFactory.createUser();
+        anotherUser = this.testPersistenceManager.save(anotherUser);
+        User finalAnotherUser = anotherUser;
         this.mockMvc.perform(delete("/api/users/" + this.testUser.getId())
-                .with(jwt().jwt(builder -> builder.subject(anotherUser.getEmail()))))
+                .with(jwt().jwt(builder -> builder.subject(finalAnotherUser.getEmail()))))
                 .andExpect(status().isForbidden());
         assertThat(this.userRepository.existsById(this.testUser.getId())).isTrue();
     }
 
     @Test
     public void testCreateWithInvalidData() throws Exception {
-        User user = Instancio.of(User.class)
-            .supply(Select.field(User::getEmail), () -> "")
-            .create();
+        User user = this.testModelFactory.createUser("", "");
         MockHttpServletRequestBuilder request = post("/api/users")
             .contentType(MediaType.APPLICATION_JSON)
             .content(this.om.writeValueAsString(user));

@@ -13,6 +13,6 @@ public class UserDTO {
     private String email;
     private String firstName;
     private String lastName;
-    @JsonFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern = TaskDTO.ISO_DATE_FORMAT)
     private LocalDate createdAt;
 }

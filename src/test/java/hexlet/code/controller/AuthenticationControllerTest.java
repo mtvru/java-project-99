@@ -1,7 +1,8 @@
 package hexlet.code.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import hexlet.code.TestUtils;
+import hexlet.code.TestModelFactory;
+import hexlet.code.TestPersistenceManager;
 import hexlet.code.dto.AuthRequestDTO;
 import hexlet.code.model.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,26 +17,30 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public final class AuthenticationControllerTest {
+public final class AuthenticationControllerTest extends AbstractControllerTest {
     private final MockMvc mockMvc;
     private final ObjectMapper om;
-    private final TestUtils testUtils;
+    private final TestPersistenceManager testPersistenceManager;
+    private final TestModelFactory testModelFactory;
 
     @Autowired
     public AuthenticationControllerTest(
-        MockMvc mockMvc, ObjectMapper om, TestUtils testUtils
+            MockMvc mockMvc, ObjectMapper om, TestPersistenceManager testPersistenceManager,
+            TestModelFactory testModelFactory
     ) {
         this.mockMvc = mockMvc;
         this.om = om;
-        this.testUtils = testUtils;
+        this.testPersistenceManager = testPersistenceManager;
+        this.testModelFactory = testModelFactory;
     }
 
     private User testUser;
 
     @BeforeEach
     public void setUp() {
-        this.testUtils.clear();
-        this.testUser = this.testUtils.createUser();
+        this.testPersistenceManager.clear();
+        this.testUser = this.testModelFactory.createUser();
+        this.testUser = this.testPersistenceManager.save(this.testUser);
     }
 
     @Test

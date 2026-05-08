@@ -11,9 +11,11 @@ import java.util.Set;
 @Getter
 @Setter
 public class TaskDTO {
+    public static final String ISO_DATE_FORMAT = "yyyy-MM-dd";
+
     private Long id;
     private Integer index;
-    @JsonFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern = ISO_DATE_FORMAT)
     private LocalDate createdAt;
     @JsonProperty("assignee_id")
     private Long assigneeId;

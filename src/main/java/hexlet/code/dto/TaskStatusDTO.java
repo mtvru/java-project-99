@@ -12,6 +12,6 @@ public class TaskStatusDTO {
     private Long id;
     private String name;
     private String slug;
-    @JsonFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern = TaskDTO.ISO_DATE_FORMAT)
     private LocalDate createdAt;
 }

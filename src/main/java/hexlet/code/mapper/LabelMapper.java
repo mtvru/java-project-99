@@ -21,6 +21,8 @@ public abstract class LabelMapper {
 
     public abstract LabelDTO map(Label model);
 
+    public abstract Label map(LabelDTO dto);
+
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     public abstract void update(LabelUpdateDTO dto, @MappingTarget Label model);
 }

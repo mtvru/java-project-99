@@ -28,6 +28,7 @@ public abstract class UserMapper {
     // Creation: standard behavior (null -> null)
     public abstract User map(UserCreateDTO dto);
     public abstract UserDTO map(User model);
+    public abstract User map(UserDTO model);
 
     // Partial update.
     // Explicitly specify IGNORE so that null fields in the DTO don't affect the entity.

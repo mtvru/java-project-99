@@ -7,6 +7,7 @@ import lombok.Getter;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 @AllArgsConstructor
 @Getter
@@ -84,6 +85,7 @@ public abstract class AbstractBasicService<Model, ModelDTO, CreateDTO, UpdateDTO
      * @return updated entity data
      */
     @Override
+    @Transactional
     public ModelDTO update(Long id, @Valid UpdateDTO dto) {
         Model entity = this.repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(getEntityNotFoundMessage(id)));

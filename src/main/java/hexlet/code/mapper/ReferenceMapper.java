@@ -21,7 +21,7 @@ public abstract class ReferenceMapper {
     private EntityManager entityManager;
 
     public final <T extends BaseEntity> T toEntity(Long id, @TargetType Class<T> entityClass) {
-        return id != null ? this.entityManager.getReference(entityClass, id) : null;
+        return id != null ? this.entityManager.find(entityClass, id) : null;
     }
 
     public final <T extends BaseEntity> Set<T> toEntitySet(Set<Long> ids, @TargetType Class<T> entityClass) {

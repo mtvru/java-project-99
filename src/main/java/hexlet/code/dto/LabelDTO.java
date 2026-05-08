@@ -11,6 +11,6 @@ import java.time.LocalDate;
 public class LabelDTO {
     private Long id;
     private String name;
-    @JsonFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern = TaskDTO.ISO_DATE_FORMAT)
     private LocalDate createdAt;
 }
