@@ -12,9 +12,11 @@ import org.instancio.settings.Settings;
 import org.springframework.boot.test.context.TestComponent;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 @TestComponent
 public final class TestModelFactory {
-    private int sequence = 0;
+    private final AtomicInteger sequence = new AtomicInteger();
     private final PasswordEncoder passwordEncoder;
     private final Model<User> userModel;
     private final Model<TaskStatus> taskStatusModel;
@@ -100,6 +102,6 @@ public final class TestModelFactory {
     }
 
     private int incSequence() {
-        return ++this.sequence;
+        return this.sequence.incrementAndGet();
     }
 }

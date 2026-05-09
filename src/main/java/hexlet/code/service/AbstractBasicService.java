@@ -4,16 +4,17 @@ import hexlet.code.exception.ResourceNotFoundException;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import hexlet.code.repository.BaseRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
+
 import org.springframework.transaction.annotation.Transactional;
 
 @AllArgsConstructor
 @Getter
 public abstract class AbstractBasicService<Model, ModelDTO, CreateDTO, UpdateDTO>
         implements CRUDService<ModelDTO, CreateDTO, UpdateDTO> {
-    private JpaRepository<Model, Long> repository;
+    private BaseRepository<Model, Long> repository;
 
     /**
      * Convert entity to DTO.
@@ -87,7 +88,7 @@ public abstract class AbstractBasicService<Model, ModelDTO, CreateDTO, UpdateDTO
     @Override
     @Transactional
     public ModelDTO update(Long id, @Valid UpdateDTO dto) {
-        Model entity = this.repository.findById(id)
+        Model entity = this.repository.findByIdLocked(id)
                 .orElseThrow(() -> new ResourceNotFoundException(getEntityNotFoundMessage(id)));
         this.toUpdate(dto, entity);
         this.repository.save(entity);

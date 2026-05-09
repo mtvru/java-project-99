@@ -12,7 +12,7 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: create-drop #update
+      ddl-auto: update
     show-sql: true
     generate-ddl: true
     properties:
