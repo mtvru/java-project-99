@@ -14,6 +14,10 @@ import hexlet.code.repository.TaskRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -120,45 +124,36 @@ public final class TaskStatusControllerTest extends AbstractControllerTest {
                 "name", "NewStatus",
                 "slug", "new_slug"
         );
-
         this.mockMvc.perform(post("/api/task_statuses")
                         .with(this.token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(this.om.writeValueAsString(data)))
                 .andExpect(status().isCreated());
-
         TaskStatus status = this.taskStatusRepository.findBySlug("new_slug").get();
         assertThat(status.getName()).isEqualTo("NewStatus");
     }
 
-    @Test
-    public void testUpdate() throws Exception {
-        Map<String, String> data = Map.of("name", "UpdatedName");
-
-        this.mockMvc.perform(put("/api/task_statuses/{id}", this.testStatus.getId())
-                        .with(this.token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(this.om.writeValueAsString(data)))
-                .andExpect(status().isOk());
-
-        TaskStatus status = this.taskStatusRepository.findById(this.testStatus.getId()).get();
-        assertThat(status.getName()).isEqualTo("UpdatedName");
-        assertThat(status.getSlug()).isEqualTo(this.testStatus.getSlug());
+    private static Stream<Arguments> partialUpdateParams() {
+        return Stream.of(
+                Arguments.of("name", "New Name"),
+                Arguments.of("slug", "new_slug_partial")
+        );
     }
 
-    @Test
-    public void testPartialUpdate() throws Exception {
-        Map<String, String> data = Map.of("slug", "updated_slug");
-
+    @ParameterizedTest
+    @MethodSource("partialUpdateParams")
+    public void testPartialUpdate(String key, Object value) throws Exception {
+        Map<String, Object> data = Map.of(key, value);
+        String oldName = this.testStatus.getName();
+        String oldSlug = this.testStatus.getSlug();
         this.mockMvc.perform(put("/api/task_statuses/{id}", this.testStatus.getId())
                         .with(this.token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(this.om.writeValueAsString(data)))
                 .andExpect(status().isOk());
-
         TaskStatus status = this.taskStatusRepository.findById(this.testStatus.getId()).get();
-        assertThat(status.getName()).isEqualTo(this.testStatus.getName());
-        assertThat(status.getSlug()).isEqualTo("updated_slug");
+        assertThat(status.getName()).isEqualTo(data.getOrDefault("name", oldName));
+        assertThat(status.getSlug()).isEqualTo(data.getOrDefault("slug", oldSlug));
     }
 
     @Test
@@ -166,7 +161,6 @@ public final class TaskStatusControllerTest extends AbstractControllerTest {
         this.mockMvc.perform(delete("/api/task_statuses/{id}", this.testStatus.getId())
                         .with(this.token))
                 .andExpect(status().isNoContent());
-
         assertThat(this.taskStatusRepository.existsById(this.testStatus.getId())).isFalse();
     }
 

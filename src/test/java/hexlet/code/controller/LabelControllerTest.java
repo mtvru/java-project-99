@@ -115,13 +115,11 @@ public final class LabelControllerTest extends AbstractControllerTest {
     @Test
     public void testCreate() throws Exception {
         Map<String, String> data = Map.of("name", "New Label");
-
         this.mockMvc.perform(post("/api/labels")
                         .with(this.token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(this.om.writeValueAsString(data)))
                 .andExpect(status().isCreated());
-
         Label label = this.labelRepository.findByName("New Label").get();
         assertThat(label.getName()).isEqualTo("New Label");
     }
@@ -129,13 +127,11 @@ public final class LabelControllerTest extends AbstractControllerTest {
     @Test
     public void testUpdate() throws Exception {
         Map<String, String> data = Map.of("name", "Updated Label");
-
         this.mockMvc.perform(put("/api/labels/{id}", this.testLabel.getId())
                         .with(this.token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(this.om.writeValueAsString(data)))
                 .andExpect(status().isOk());
-
         Label label = this.labelRepository.findById(this.testLabel.getId()).get();
         assertThat(label.getName()).isEqualTo("Updated Label");
     }
@@ -147,7 +143,6 @@ public final class LabelControllerTest extends AbstractControllerTest {
         this.mockMvc.perform(delete("/api/labels/{id}", label.getId())
                         .with(this.token))
                 .andExpect(status().isNoContent());
-
         assertThat(this.labelRepository.existsById(label.getId())).isFalse();
     }
 
@@ -164,7 +159,6 @@ public final class LabelControllerTest extends AbstractControllerTest {
         this.mockMvc.perform(delete("/api/labels/{id}", label.getId())
                         .with(this.token))
                 .andExpect(status().isConflict());
-
         assertThat(this.labelRepository.existsById(label.getId())).isTrue();
     }
 

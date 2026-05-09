@@ -23,6 +23,10 @@ import hexlet.code.repository.UserRepository;
 import net.datafaker.Faker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -131,27 +135,37 @@ public final class UserControllerTest extends AbstractControllerTest {
             .andReturn();
     }
 
-    @Test
-    public void testUpdate() throws Exception {
-        final String email = this.testUser.getEmail();
-        final String lastName = this.testUser.getLastName();
+    private static Stream<Arguments> partialUpdateParams() {
+        return Stream.of(
+                Arguments.of("firstName", "Mike update"),
+                Arguments.of("lastName", "Smith update"),
+                Arguments.of("email", "mike_update@example.com"),
+                Arguments.of("password", "new_password")
+        );
+    }
 
-        HashMap<String, String> data = new HashMap<>();
-        String firstName = "Mike update";
-        data.put("firstName", firstName);
-
-        MockHttpServletRequestBuilder request = put("/api/users/{id}", this.testUser.getId())
-            .with(this.token)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(this.om.writeValueAsString(data));
-
-        this.mockMvc.perform(request)
-            .andExpect(status().isOk());
-
+    @ParameterizedTest
+    @MethodSource("partialUpdateParams")
+    public void testPartialUpdate(String key, Object value) throws Exception {
+        Map<String, Object> data = Map.of(key, value);
+        String oldFirstName = this.testUser.getFirstName();
+        String oldLastName = this.testUser.getLastName();
+        String oldEmail = this.testUser.getEmail();
+        String oldPasswordDigest = this.testUser.getPassword();
+        this.mockMvc.perform(put("/api/users/{id}", this.testUser.getId())
+                        .with(this.token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(this.om.writeValueAsString(data)))
+                .andExpect(status().isOk());
         User updatedUser = this.userRepository.findById(this.testUser.getId()).get();
-        assertThat(updatedUser.getFirstName()).isEqualTo(firstName);
-        assertThat(updatedUser.getLastName()).isEqualTo(lastName);
-        assertThat(updatedUser.getEmail()).isEqualTo(email);
+        assertThat(updatedUser.getFirstName()).isEqualTo(data.getOrDefault("firstName", oldFirstName));
+        assertThat(updatedUser.getLastName()).isEqualTo(data.getOrDefault("lastName", oldLastName));
+        assertThat(updatedUser.getEmail()).isEqualTo(data.getOrDefault("email", oldEmail));
+        if (data.containsKey("password")) {
+            assertThat(updatedUser.getPassword()).isNotEqualTo(oldPasswordDigest);
+        } else {
+            assertThat(updatedUser.getPassword()).isEqualTo(oldPasswordDigest);
+        }
     }
 
     @Test

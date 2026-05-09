@@ -91,7 +91,6 @@ public final class TaskControllerTest extends AbstractControllerTest {
         this.testLabel = this.testPersistenceManager.save(this.testLabel);
         this.testTask = this.testModelFactory.createTask(this.testUser, this.testStatus, this.testLabel);
         this.testTask = this.testPersistenceManager.save(this.testTask);
-
         Task task = this.testModelFactory.createTask(
                 TASK_NAME_SPECIFIC + " task", this.testUser, this.testStatus, this.testLabel
         );
@@ -115,20 +114,6 @@ public final class TaskControllerTest extends AbstractControllerTest {
             );
     }
 
-    @ParameterizedTest
-    @MethodSource("filterParams")
-    public void testIndexWithFilter(String query, int size) throws Exception {
-        String queryString = query.replace("{assigneeId}", String.valueOf(testUser.getId()))
-                .replace("{status}", testStatus.getSlug())
-                .replace("{labelId}", String.valueOf(testLabel.getId()));
-
-        MvcResult result = mockMvc.perform(get("/api/tasks?" + queryString)
-                        .with(this.token))
-                .andExpect(status().isOk())
-                .andReturn();
-        assertThatJson(result.getResponse().getContentAsString()).isArray().hasSize(size);
-    }
-
     private static Stream<Arguments> filterParams() {
         return Stream.of(
                 Arguments.of("titleCont=" + TASK_NAME_SPECIFIC, 1),
@@ -138,6 +123,19 @@ public final class TaskControllerTest extends AbstractControllerTest {
                 Arguments.of("titleCont=" + TASK_NAME_SPECIFIC + "&labelId={labelId}", 1),
                 Arguments.of("titleCont=NonExistent&labelId={labelId}", 0)
         );
+    }
+
+    @ParameterizedTest
+    @MethodSource("filterParams")
+    public void testIndexWithFilter(String query, int size) throws Exception {
+        String queryString = query.replace("{assigneeId}", String.valueOf(testUser.getId()))
+                .replace("{status}", testStatus.getSlug())
+                .replace("{labelId}", String.valueOf(testLabel.getId()));
+        MvcResult result = mockMvc.perform(get("/api/tasks?" + queryString)
+                        .with(this.token))
+                .andExpect(status().isOk())
+                .andReturn();
+        assertThatJson(result.getResponse().getContentAsString()).isArray().hasSize(size);
     }
 
     @Test
@@ -171,7 +169,6 @@ public final class TaskControllerTest extends AbstractControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(this.om.writeValueAsString(data)))
                 .andExpect(status().isCreated());
-
         Task task = this.taskRepository.findByName("New Task").get();
         assertThat(task.getDescription()).isEqualTo("New Description");
         assertThat(task.getStatus().getSlug()).isEqualTo(this.testStatus.getSlug());
@@ -179,37 +176,65 @@ public final class TaskControllerTest extends AbstractControllerTest {
         assertThat(task.getIndex()).isEqualTo(TEST_INDEX);
     }
 
-    @Test
-    public void testUpdate() throws Exception {
-        Map<String, Object> data = new HashMap<>();
-        data.put("title", "Updated Task");
-        data.put("content", "Updated Description");
-        this.mockMvc.perform(put("/api/tasks/{id}", this.testTask.getId())
-                        .with(this.token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(this.om.writeValueAsString(data)))
-                .andExpect(status().isOk());
-        Task task = this.taskRepository.findById(this.testTask.getId()).get();
-        assertThat(task.getName()).isEqualTo("Updated Task");
-        assertThat(task.getDescription()).isEqualTo("Updated Description");
-        assertThat(task.getStatus().getSlug()).isEqualTo(this.testStatus.getSlug());
+    private static Stream<Arguments> partialUpdateParams() {
+        return Stream.of(
+                Arguments.of("title", "New Title"),
+                Arguments.of("content", "New Content"),
+                Arguments.of("status", null),
+                Arguments.of("assignee_id", null),
+                Arguments.of("taskLabelIds", null)
+        );
     }
 
-    @Test
-    public void testPartialUpdateStatus() throws Exception {
-        TaskStatus newStatus = this.testModelFactory.createTaskStatus();
-        newStatus = this.testPersistenceManager.save(newStatus);
-
-        Map<String, Object> data = Map.of("status", newStatus.getSlug());
-
+    @ParameterizedTest
+    @MethodSource("partialUpdateParams")
+    @org.springframework.transaction.annotation.Transactional
+    public void testPartialUpdate(String key, Object value) throws Exception {
+        Object newValue = value;
+        if (value == null) {
+            newValue = switch (key) {
+                case "status" -> {
+                    TaskStatus newStatus = this.testModelFactory.createTaskStatus();
+                    this.testPersistenceManager.save(newStatus);
+                    yield newStatus.getSlug();
+                }
+                case "assignee_id" -> {
+                    User newUser = this.testModelFactory.createUser();
+                    this.testPersistenceManager.save(newUser);
+                    yield newUser.getId();
+                }
+                case "taskLabelIds" -> {
+                    Label newLabel = this.testModelFactory.createLabel();
+                    this.testPersistenceManager.save(newLabel);
+                    yield Set.of(newLabel.getId());
+                }
+                default -> throw new IllegalArgumentException("Unexpected key: " + key);
+            };
+        }
+        Map<String, Object> data = Map.of(key, newValue);
+        String oldTitle = this.testTask.getName();
+        String oldContent = this.testTask.getDescription();
+        String oldStatus = this.testTask.getStatus().getSlug();
+        Long oldAssigneeId = this.testTask.getAssignee().getId();
+        List<Long> oldLabelIds = this.testTask.getLabels().stream().map(Label::getId).toList();
         this.mockMvc.perform(put("/api/tasks/{id}", this.testTask.getId())
                         .with(this.token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(this.om.writeValueAsString(data)))
                 .andExpect(status().isOk());
-
         Task task = this.taskRepository.findById(this.testTask.getId()).get();
-        assertThat(task.getStatus().getSlug()).isEqualTo(newStatus.getSlug());
+        assertThat(task.getName()).isEqualTo(data.getOrDefault("title", oldTitle));
+        assertThat(task.getDescription()).isEqualTo(data.getOrDefault("content", oldContent));
+        assertThat(task.getStatus().getSlug()).isEqualTo(data.getOrDefault("status", oldStatus));
+        assertThat(task.getAssignee().getId()).isEqualTo(data.getOrDefault("assignee_id", oldAssigneeId));
+        if (data.containsKey("taskLabelIds")) {
+            assertThat(task.getLabels()).hasSize(1);
+            assertThat(task.getLabels().iterator().next().getId())
+                    .isEqualTo(((Set<Long>) data.get("taskLabelIds")).iterator().next());
+        } else {
+            assertThat(task.getLabels().stream().map(Label::getId).toList())
+                    .containsExactlyInAnyOrderElementsOf(oldLabelIds);
+        }
     }
 
     @Test
@@ -217,7 +242,6 @@ public final class TaskControllerTest extends AbstractControllerTest {
         this.mockMvc.perform(delete("/api/tasks/{id}", this.testTask.getId())
                         .with(this.token))
                 .andExpect(status().isNoContent());
-
         assertThat(this.taskRepository.existsById(this.testTask.getId())).isFalse();
     }
 
@@ -226,7 +250,6 @@ public final class TaskControllerTest extends AbstractControllerTest {
         this.mockMvc.perform(delete("/api/users/{id}", this.testUser.getId())
                         .with(this.token))
                 .andExpect(status().isConflict());
-
         assertThat(this.userRepository.existsById(this.testUser.getId())).isTrue();
     }
 
@@ -235,7 +258,6 @@ public final class TaskControllerTest extends AbstractControllerTest {
         this.mockMvc.perform(delete("/api/task_statuses/{id}", this.testStatus.getId())
                         .with(this.token))
                 .andExpect(status().isConflict());
-
         assertThat(this.taskStatusRepository.existsById(this.testStatus.getId())).isTrue();
     }
 
@@ -245,20 +267,16 @@ public final class TaskControllerTest extends AbstractControllerTest {
         Label label2 = this.testModelFactory.createLabel();
         label1 = this.testPersistenceManager.save(label1);
         label2 = this.testPersistenceManager.save(label2);
-
         Map<String, Object> data = new HashMap<>();
         data.put("title", "Task with labels");
         data.put("status", this.testStatus.getSlug());
         data.put("taskLabelIds", Set.of(label1.getId(), label2.getId()));
-
         this.mockMvc.perform(post("/api/tasks")
                         .with(this.token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(this.om.writeValueAsString(data)))
                 .andExpect(status().isCreated());
-
         Task task = this.taskRepository.findByName("Task with labels").get();
-
         assertThat(task.getLabels()).hasSize(2);
         assertThat(task.getLabels()).extracting(Label::getId).containsExactlyInAnyOrder(label1.getId(), label2.getId());
     }
