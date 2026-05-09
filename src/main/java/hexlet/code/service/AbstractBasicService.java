@@ -72,7 +72,6 @@ public abstract class AbstractBasicService<Model, ModelDTO, CreateDTO, UpdateDTO
      * @return created entity data
      */
     @Override
-    @Transactional
     public ModelDTO create(@Valid CreateDTO dto) {
         Model entity = toEntity(dto);
         this.repository.save(entity);
@@ -100,7 +99,6 @@ public abstract class AbstractBasicService<Model, ModelDTO, CreateDTO, UpdateDTO
      * @param id entity id
      */
     @Override
-    @Transactional
     public void delete(Long id) {
         this.repository.deleteById(id);
     }

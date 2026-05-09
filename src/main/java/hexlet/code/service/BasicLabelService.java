@@ -3,13 +3,10 @@ package hexlet.code.service;
 import hexlet.code.dto.LabelCreateDTO;
 import hexlet.code.dto.LabelDTO;
 import hexlet.code.dto.LabelUpdateDTO;
-import hexlet.code.exception.ResourceNotFoundException;
 import hexlet.code.mapper.LabelMapper;
 import hexlet.code.model.Label;
 import hexlet.code.repository.LabelRepository;
-import jakarta.validation.Valid;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 @Service
@@ -20,28 +17,6 @@ public class BasicLabelService extends AbstractBasicService<Label, LabelDTO, Lab
     public BasicLabelService(LabelMapper mapper, LabelRepository repository) {
         super(repository);
         this.mapper = mapper;
-    }
-
-    /**
-     * Update existing entity.
-     * @param id entity id
-     * @param dto new data
-     * @return updated entity data
-     */
-    @Override
-    @Transactional
-    public LabelDTO update(Long id, @Valid LabelUpdateDTO dto) {
-        int updated = ((LabelRepository) getRepository()).updateAtomic(
-            id,
-            dto.getName() == null ? null : dto.getName().orElse(null),
-            dto.getName() != null && dto.getName().isPresent()
-        );
-
-        if (updated == 0) {
-            throw new ResourceNotFoundException(getEntityNotFoundMessage(id));
-        }
-
-        return findById(id);
     }
 
     /**

@@ -3,7 +3,6 @@ package hexlet.code.service;
 import hexlet.code.dto.UserCreateDTO;
 import hexlet.code.dto.UserDTO;
 import hexlet.code.dto.UserUpdateDTO;
-import hexlet.code.exception.ResourceNotFoundException;
 import hexlet.code.mapper.UserMapper;
 import hexlet.code.model.User;
 import hexlet.code.model.enums.UserRole;
@@ -12,9 +11,7 @@ import jakarta.validation.Valid;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 @Service
@@ -22,12 +19,10 @@ import org.springframework.validation.annotation.Validated;
 public class BasicUserService extends AbstractBasicService<User, UserDTO, UserCreateDTO, UserUpdateDTO>
         implements UserDetailsService {
     private final UserMapper mapper;
-    private final PasswordEncoder passwordEncoder;
 
-    public BasicUserService(UserMapper mapper, UserRepository repository, PasswordEncoder passwordEncoder) {
+    public BasicUserService(UserMapper mapper, UserRepository repository) {
         super(repository);
         this.mapper = mapper;
-        this.passwordEncoder = passwordEncoder;
     }
 
     /**
@@ -53,41 +48,6 @@ public class BasicUserService extends AbstractBasicService<User, UserDTO, UserCr
         user.setRole(UserRole.USER);
         this.getRepository().save(user);
         return this.mapper.map(user);
-    }
-
-    /**
-     * Update existing entity.
-     * @param id entity id
-     * @param dto new data
-     * @return updated entity data
-     */
-    @Override
-    @Transactional
-    public UserDTO update(Long id, @Valid UserUpdateDTO dto) {
-        String password = null;
-        boolean passwordSet = false;
-        if (dto.getPassword() != null && dto.getPassword().isPresent()) {
-            password = passwordEncoder.encode(dto.getPassword().get());
-            passwordSet = true;
-        }
-
-        int updated = ((UserRepository) getRepository()).updateAtomic(
-            id,
-            dto.getFirstName() == null ? null : dto.getFirstName().orElse(null),
-            dto.getFirstName() != null && dto.getFirstName().isPresent(),
-            dto.getLastName() == null ? null : dto.getLastName().orElse(null),
-            dto.getLastName() != null && dto.getLastName().isPresent(),
-            dto.getEmail() == null ? null : dto.getEmail().orElse(null),
-            dto.getEmail() != null && dto.getEmail().isPresent(),
-            password,
-            passwordSet
-        );
-
-        if (updated == 0) {
-            throw new ResourceNotFoundException(getEntityNotFoundMessage(id));
-        }
-
-        return findById(id);
     }
 
     /**
