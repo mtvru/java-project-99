@@ -22,6 +22,10 @@ configurations {
     }
 }
 
+dependencyLocking {
+    lockAllConfigurations()
+}
+
 repositories {
     mavenCentral()
 }
@@ -52,8 +56,6 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
 
     implementation(libs.mapstruct)
-    implementation(libs.datafaker)
-    implementation(libs.instancio)
     implementation(libs.jackson.nullable)
     implementation(libs.springdoc.ui)
     implementation(libs.springdoc.api)
@@ -64,6 +66,7 @@ dependencies {
     runtimeOnly("com.h2database:h2")
 
     annotationProcessor("org.projectlombok:lombok")
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     annotationProcessor(libs.mapstruct.processor)
 
     testImplementation(platform("org.junit:junit-bom"))
@@ -71,6 +74,8 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation(libs.json.unit)
+    testImplementation(libs.datafaker)
+    testImplementation(libs.instancio)
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testAnnotationProcessor(libs.mapstruct.processor)
