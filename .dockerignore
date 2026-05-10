@@ -1,0 +1,7 @@
+.github
+.gradle
+.idea
+build
+data
+node_modules
+src/main/resources/static

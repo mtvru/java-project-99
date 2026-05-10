@@ -9,15 +9,7 @@ RUN mkdir -p src/main/resources/certs
 RUN openssl genpkey -out src/main/resources/certs/private.pem -algorithm RSA -pkeyopt rsa_keygen_bits:2048 && \
     openssl rsa -in src/main/resources/certs/private.pem -pubout -out src/main/resources/certs/public.pem
 
-COPY ./gradle /app/gradle
-COPY ./src /app/src
-COPY ./build.gradle.kts /app/build.gradle.kts
-COPY ./gradlew /app/gradlew
-COPY ./settings.gradle.kts /app/settings.gradle.kts
-COPY ./Makefile /app/Makefile
-COPY ./package.json /app/package.json
-COPY ./package-lock.json /app/package-lock.json
-COPY ./config /app/config
+COPY . /app
 
 RUN npm install
 RUN npx build-frontend
