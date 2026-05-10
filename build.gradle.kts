@@ -22,10 +22,6 @@ configurations {
     }
 }
 
-dependencyLocking {
-    lockAllConfigurations()
-}
-
 repositories {
     mavenCentral()
 }
