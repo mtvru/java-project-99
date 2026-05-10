@@ -99,7 +99,6 @@ public abstract class AbstractBasicService<Model, ModelDTO, CreateDTO, UpdateDTO
      * Delete entity by id.
      * @param id entity id
      */
-    @Override
     public void delete(Long id) {
         this.repository.deleteById(id);
     }
