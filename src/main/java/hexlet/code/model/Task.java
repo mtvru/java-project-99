@@ -71,7 +71,7 @@ public class Task implements BaseEntity {
      * Remove a label from the task.
      * @param label to remove
      */
-    public void removeTag(Label label) {
+    public void removeLabel(Label label) {
         this.labels.remove(label);
         label.getTasks().remove(this);
     }
